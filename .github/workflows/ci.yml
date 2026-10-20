@@ -1,0 +1,69 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python -m ruff check desk tests scripts
+      - run: python -m pytest -q
+
+  data:
+    # rebuild the bundle from FlowSentry on a clean runner and compare with the committed one
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -r requirements-build.txt
+      - run: python scripts/verify_bundle.py
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t flowsentry-desk .
+      - name: serve with no key, then smoke-test
+        run: |
+          docker run -d --name desk -p 7860:7860 flowsentry-desk
+          for i in $(seq 1 30); do curl -fs localhost:7860/api/health && break; sleep 1; done
+          curl -fs localhost:7860/api/health
+          curl -fs -c c.txt -b c.txt -X POST localhost:7860/api/case/C0002/run -H 'Content-Type: application/json' -d '{"engine":"auto"}' | head -c 300
+          docker logs desk | tail -5
+
+  ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -r requirements.txt "playwright>=1.45"
+      - run: python -m playwright install --with-deps chromium
+      - name: serve and click through the demo
+        run: |
+          DESK_DB_PATH=/tmp/desk.sqlite3 python -m uvicorn desk.app:app --port 8000 &
+          for i in $(seq 1 30); do curl -fs localhost:8000/api/health && break; sleep 1; done
+          python scripts/ui_check.py --url http://127.0.0.1:8000 --out ui-shots
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-shots
+          path: ui-shots

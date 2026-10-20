@@ -1,0 +1,12 @@
+.venv
+.git
+build
+tests
+docs
+scripts
+*.sqlite3
+.env
+__pycache__
+.pytest_cache
+.ruff_cache
+build_run.log

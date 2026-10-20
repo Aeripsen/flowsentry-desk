@@ -1,0 +1,8 @@
+# Rebuilding data/desk_bundle.npz (make data). FlowSentry at the pinned commit, plus the
+# libraries its published numbers were produced with (its requirements.lock).
+-r requirements.txt
+flowsentry @ https://github.com/Aeripsen/flowsentry/archive/1299cd8c3ed19f0677d170b8973e64589d070430.tar.gz
+pandas==3.0.3
+joblib==1.5.3
+pydantic-settings[yaml]==2.14.2
+PyYAML==6.0.3

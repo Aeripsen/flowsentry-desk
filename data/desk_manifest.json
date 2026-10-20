@@ -1,0 +1,729 @@
+{
+  "what": "FlowSentry Desk data bundle: FlowSentry's 0.99 reject queue on the held-out split of the committed BCCC-UDP-QUIC-IDS-2025 sample, with explanations, precedents, family cards and the close gate's scores",
+  "dataset": "BCCC-UDP-QUIC-IDS-2025 (public, CC BY 4.0), FlowSentry's stratified sample",
+  "flowsentry_commit": "1299cd8c3ed19f0677d170b8973e64589d070430",
+  "upstream_sha256": {
+    "data/sample/bccc_udp_quic_sample.csv.gz": "3707e5f5e9bee8efb0a6ee8be6e285343d38a4b24c28cf7bc308276b428f9f3b",
+    "artifacts/metrics.json": "9be6090dbbef357b1455bcdcfcde576ad60c1d8f0a0d1993e8ca0cf0fefea9ac",
+    "artifacts/business_case.json": "48727fa5d171d6a81a8df5ab789b9866f6fae240eef515e93cd4220eb7c02985"
+  },
+  "provenance": {
+    "metrics_match_published": true,
+    "differing_keys": []
+  },
+  "reject_threshold": 0.99,
+  "n_heldout": 6570,
+  "n_queue": 2315,
+  "queue_by_class": {
+    "UDP-GAME": 47,
+    "UDP-HULK": 57,
+    "UDP-MULTI": 73,
+    "UDP-OVH": 51,
+    "UDP-RAW": 144,
+    "UDP-VSE": 67,
+    "UDP-bypass-v1": 52,
+    "benign": 1824
+  },
+  "explanation_max_abs_error": 7.771561172376096e-16,
+  "gate": {
+    "trained_on": "training split only: out-of-fold FlowSentry (3 connection-grouped folds) and the flows those folds would send to an analyst at 0.99",
+    "n_training_queue": 6945,
+    "training_queue_benign_share": 0.7908,
+    "inputs": "132 flow features (signed log, robust scaled) + FlowSentry's 8 out-of-fold class probabilities + 8 precedent statistics: fs_p_benign, fs_confidence, fs_escalated, knn_benign_share, knn_benign_share_weighted, log_d_nearest_benign, log_d_nearest_attack, log_d_ratio",
+    "model": "5 HistGradientBoosting models, one per connection-grouped fold; the score is their mean; the threshold is picked on their out-of-fold scores",
+    "out_of_fold_auc": 0.8395,
+    "knob": [
+      {
+        "cap_per_1000": 10.0,
+        "met_on_training": false,
+        "threshold": null
+      },
+      {
+        "cap_per_1000": 20.0,
+        "met_on_training": false,
+        "threshold": null
+      },
+      {
+        "cap_per_1000": 30.0,
+        "met_on_training": true,
+        "threshold": 0.990743527513804,
+        "training_closed": 1234,
+        "training_attacks_closed": 25,
+        "training_share_closed": 0.1777,
+        "training_share_of_attacks_closed": 0.0172
+      },
+      {
+        "cap_per_1000": 50.0,
+        "met_on_training": true,
+        "threshold": 0.9796162495159582,
+        "training_closed": 1602,
+        "training_attacks_closed": 63,
+        "training_share_closed": 0.2307,
+        "training_share_of_attacks_closed": 0.0434
+      },
+      {
+        "cap_per_1000": 100.0,
+        "met_on_training": true,
+        "threshold": 0.7881668264536867,
+        "training_closed": 5348,
+        "training_attacks_closed": 491,
+        "training_share_closed": 0.7701,
+        "training_share_of_attacks_closed": 0.3379
+      }
+    ],
+    "default_rule": "the strictest cap in the knob that the training data can certify",
+    "cap_per_1000": 30.0,
+    "threshold": 0.990743527513804,
+    "training_closed": 1234,
+    "training_attacks_closed": 25,
+    "training_wilson_upper_per_1000": 29.74,
+    "training_curve": [
+      {
+        "threshold": 0.5,
+        "closed": 5979,
+        "attacks_closed": 715,
+        "share_closed": 0.8609,
+        "wilson_upper_per_1000": 128.06
+      },
+      {
+        "threshold": 0.8,
+        "closed": 5305,
+        "attacks_closed": 480,
+        "share_closed": 0.7639,
+        "wilson_upper_per_1000": 98.5
+      },
+      {
+        "threshold": 0.9,
+        "closed": 4333,
+        "attacks_closed": 339,
+        "share_closed": 0.6239,
+        "wilson_upper_per_1000": 86.61
+      },
+      {
+        "threshold": 0.95,
+        "closed": 2321,
+        "attacks_closed": 129,
+        "share_closed": 0.3342,
+        "wilson_upper_per_1000": 65.66
+      },
+      {
+        "threshold": 0.98,
+        "closed": 1589,
+        "attacks_closed": 62,
+        "share_closed": 0.2288,
+        "wilson_upper_per_1000": 49.7
+      },
+      {
+        "threshold": 0.99,
+        "closed": 1264,
+        "attacks_closed": 29,
+        "share_closed": 0.182,
+        "wilson_upper_per_1000": 32.76
+      },
+      {
+        "threshold": 0.995,
+        "closed": 961,
+        "attacks_closed": 17,
+        "share_closed": 0.1384,
+        "wilson_upper_per_1000": 28.15
+      },
+      {
+        "threshold": 0.998,
+        "closed": 500,
+        "attacks_closed": 7,
+        "share_closed": 0.072,
+        "wilson_upper_per_1000": 28.61
+      }
+    ]
+  },
+  "family_cards": {
+    "UDP-GAME": {
+      "family": "UDP-GAME",
+      "training_flows": 155,
+      "share_of_training": 0.0081,
+      "share_flowsentry_unsure_out_of_fold": 0.8903,
+      "typical": {
+        "pkt_count": {
+          "label": "packets in the flow",
+          "median": 5.0,
+          "p25": 3.0,
+          "p75": 688.0
+        },
+        "duration": {
+          "label": "flow duration (s)",
+          "median": 0.216463,
+          "p25": 0.000147462,
+          "p75": 13.0906
+        },
+        "pps": {
+          "label": "packets per second",
+          "median": 32.4243,
+          "p25": 0.396681,
+          "p75": 3534.27
+        },
+        "avg_pkt_size": {
+          "label": "mean packet size (bytes)",
+          "median": 70.0,
+          "p25": 70.0,
+          "p75": 1161.96
+        },
+        "min_pkt": {
+          "label": "smallest packet (bytes)",
+          "median": 70.0,
+          "p25": 70.0,
+          "p75": 71.0
+        },
+        "max_pkt": {
+          "label": "largest packet (bytes)",
+          "median": 70.0,
+          "p25": 70.0,
+          "p75": 1399.0
+        },
+        "mean_iat": {
+          "label": "mean gap between packets (s)",
+          "median": 0.00519792,
+          "p25": 6.87838e-05,
+          "p75": 0.0467406
+        },
+        "directional_asymmetry": {
+          "label": "one-way-ness of the flow (1 = all one way)",
+          "median": 1.0,
+          "p25": 0.982412,
+          "p75": 1.0
+        },
+        "fwd_bwd_byte_ratio": {
+          "label": "forward to backward byte ratio",
+          "median": 70.0,
+          "p25": 0.0250253,
+          "p75": 210.0
+        },
+        "has_quic_subflow": {
+          "label": "carries QUIC",
+          "median": 0.0,
+          "p25": 0.0,
+          "p75": 0.0
+        }
+      },
+      "attack_technique": "T1498.001",
+      "technique_name": "Network Denial of Service: Direct Network Flood",
+      "playbook": "Rate-limit or blackhole the source, engage upstream/cloud DDoS scrubbing, page on-call netops, and confirm the target service is still reachable.",
+      "rare": true
+    },
+    "UDP-HULK": {
+      "family": "UDP-HULK",
+      "training_flows": 183,
+      "share_of_training": 0.0096,
+      "share_flowsentry_unsure_out_of_fold": 0.8798,
+      "typical": {
+        "pkt_count": {
+          "label": "packets in the flow",
+          "median": 3.0,
+          "p25": 1.0,
+          "p75": 8.0
+        },
+        "duration": {
+          "label": "flow duration (s)",
+          "median": 0.000404835,
+          "p25": 0.0,
+          "p75": 3.24992
+        },
+        "pps": {
+          "label": "packets per second",
+          "median": 24.5833,
+          "p25": 0.0,
+          "p75": 451.183
+        },
+        "avg_pkt_size": {
+          "label": "mean packet size (bytes)",
+          "median": 70.0,
+          "p25": 70.0,
+          "p75": 771.333
+        },
+        "min_pkt": {
+          "label": "smallest packet (bytes)",
+          "median": 70.0,
+          "p25": 70.0,
+          "p75": 72.0
+        },
+        "max_pkt": {
+          "label": "largest packet (bytes)",
+          "median": 70.0,
+          "p25": 70.0,
+          "p75": 1290.0
+        },
+        "mean_iat": {
+          "label": "mean gap between packets (s)",
+          "median": 0.000106719,
+          "p25": 0.0,
+          "p75": 0.0460107
+        },
+        "directional_asymmetry": {
+          "label": "one-way-ness of the flow (1 = all one way)",
+          "median": 1.0,
+          "p25": 1.0,
+          "p75": 1.0
+        },
+        "fwd_bwd_byte_ratio": {
+          "label": "forward to backward byte ratio",
+          "median": 153.01,
+          "p25": 64.0,
+          "p75": 350.0
+        },
+        "has_quic_subflow": {
+          "label": "carries QUIC",
+          "median": 0.0,
+          "p25": 0.0,
+          "p75": 0.0
+        }
+      },
+      "attack_technique": "T1498.001",
+      "technique_name": "Network Denial of Service: Direct Network Flood",
+      "playbook": "Rate-limit or blackhole the source, engage upstream/cloud DDoS scrubbing, page on-call netops, and confirm the target service is still reachable.",
+      "rare": true
+    },
+    "UDP-MULTI": {
+      "family": "UDP-MULTI",
+      "training_flows": 183,
+      "share_of_training": 0.0096,
+      "share_flowsentry_unsure_out_of_fold": 0.9617,
+      "typical": {
+        "pkt_count": {
+          "label": "packets in the flow",
+          "median": 5.0,
+          "p25": 2.0,
+          "p75": 371.0
+        },
+        "duration": {
+          "label": "flow duration (s)",
+          "median": 0.085546,
+          "p25": 0.000115037,
+          "p75": 1.7596
+        },
+        "pps": {
+          "label": "packets per second",
+          "median": 95.0571,
+          "p25": 0.150056,
+          "p75": 1108.51
+        },
+        "avg_pkt_size": {
+          "label": "mean packet size (bytes)",
+          "median": 70.0,
+          "p25": 70.0,
+          "p75": 1179.47
+        },
+        "min_pkt": {
+          "label": "smallest packet (bytes)",
+          "median": 70.0,
+          "p25": 69.0,
+          "p75": 70.0
+        },
+        "max_pkt": {
+          "label": "largest packet (bytes)",
+          "median": 70.0,
+          "p25": 70.0,
+          "p75": 1399.0
+        },
+        "mean_iat": {
+          "label": "mean gap between packets (s)",
+          "median": 0.00107216,
+          "p25": 5.29885e-05,
+          "p75": 0.0113606
+        },
+        "directional_asymmetry": {
+          "label": "one-way-ness of the flow (1 = all one way)",
+          "median": 1.0,
+          "p25": 0.972104,
+          "p75": 1.0
+        },
+        "fwd_bwd_byte_ratio": {
+          "label": "forward to backward byte ratio",
+          "median": 70.0,
+          "p25": 0.0251525,
+          "p75": 210.0
+        },
+        "has_quic_subflow": {
+          "label": "carries QUIC",
+          "median": 0.0,
+          "p25": 0.0,
+          "p75": 1.0
+        }
+      },
+      "attack_technique": "T1498.001",
+      "technique_name": "Network Denial of Service: Direct Network Flood",
+      "playbook": "Rate-limit or blackhole the source, engage upstream/cloud DDoS scrubbing, page on-call netops, and confirm the target service is still reachable.",
+      "rare": true
+    },
+    "UDP-OVH": {
+      "family": "UDP-OVH",
+      "training_flows": 249,
+      "share_of_training": 0.0131,
+      "share_flowsentry_unsure_out_of_fold": 0.8434,
+      "typical": {
+        "pkt_count": {
+          "label": "packets in the flow",
+          "median": 6.0,
+          "p25": 3.0,
+          "p75": 364.0
+        },
+        "duration": {
+          "label": "flow duration (s)",
+          "median": 0.131074,
+          "p25": 0.000144958,
+          "p75": 5.03687
+        },
+        "pps": {
+          "label": "packets per second",
+          "median": 50.5229,
+          "p25": 9.42734,
+          "p75": 1325.57
+        },
+        "avg_pkt_size": {
+          "label": "mean packet size (bytes)",
+          "median": 137.0,
+          "p25": 70.0,
+          "p75": 1164.13
+        },
+        "min_pkt": {
+          "label": "smallest packet (bytes)",
+          "median": 70.0,
+          "p25": 70.0,
+          "p75": 72.0
+        },
+        "max_pkt": {
+          "label": "largest packet (bytes)",
+          "median": 137.0,
+          "p25": 70.0,
+          "p75": 1399.0
+        },
+        "mean_iat": {
+          "label": "mean gap between packets (s)",
+          "median": 0.00301499,
+          "p25": 6.30035e-05,
+          "p75": 0.0267127
+        },
+        "directional_asymmetry": {
+          "label": "one-way-ness of the flow (1 = all one way)",
+          "median": 1.0,
+          "p25": 0.962043,
+          "p75": 1.0
+        },
+        "fwd_bwd_byte_ratio": {
+          "label": "forward to backward byte ratio",
+          "median": 70.0,
+          "p25": 34.6553,
+          "p75": 210.0
+        },
+        "has_quic_subflow": {
+          "label": "carries QUIC",
+          "median": 0.0,
+          "p25": 0.0,
+          "p75": 0.0
+        }
+      },
+      "attack_technique": "T1498.001",
+      "technique_name": "Network Denial of Service: Direct Network Flood",
+      "playbook": "Rate-limit or blackhole the source, engage upstream/cloud DDoS scrubbing, page on-call netops, and confirm the target service is still reachable.",
+      "rare": true
+    },
+    "UDP-RAW": {
+      "family": "UDP-RAW",
+      "training_flows": 8924,
+      "share_of_training": 0.4686,
+      "share_flowsentry_unsure_out_of_fold": 0.0505,
+      "typical": {
+        "pkt_count": {
+          "label": "packets in the flow",
+          "median": 8.0,
+          "p25": 5.0,
+          "p75": 11.0
+        },
+        "duration": {
+          "label": "flow duration (s)",
+          "median": 10.8682,
+          "p25": 8.52616,
+          "p75": 12.6988
+        },
+        "pps": {
+          "label": "packets per second",
+          "median": 0.800994,
+          "p25": 0.53939,
+          "p75": 1.06119
+        },
+        "avg_pkt_size": {
+          "label": "mean packet size (bytes)",
+          "median": 553.722,
+          "p25": 479.444,
+          "p75": 630.023
+        },
+        "min_pkt": {
+          "label": "smallest packet (bytes)",
+          "median": 131.5,
+          "p25": 79.0,
+          "p75": 233.0
+        },
+        "max_pkt": {
+          "label": "largest packet (bytes)",
+          "median": 977.0,
+          "p25": 874.0,
+          "p75": 1030.0
+        },
+        "mean_iat": {
+          "label": "mean gap between packets (s)",
+          "median": 1.34641,
+          "p25": 0.98523,
+          "p75": 2.03054
+        },
+        "directional_asymmetry": {
+          "label": "one-way-ness of the flow (1 = all one way)",
+          "median": 1.0,
+          "p25": 1.0,
+          "p75": 1.0
+        },
+        "fwd_bwd_byte_ratio": {
+          "label": "forward to backward byte ratio",
+          "median": 4496.0,
+          "p25": 2718.75,
+          "p75": 6227.25
+        },
+        "has_quic_subflow": {
+          "label": "carries QUIC",
+          "median": 0.0,
+          "p25": 0.0,
+          "p75": 1.0
+        }
+      },
+      "attack_technique": "T1498.001",
+      "technique_name": "Network Denial of Service: Direct Network Flood",
+      "playbook": "Rate-limit or blackhole the source, engage upstream/cloud DDoS scrubbing, page on-call netops, and confirm the target service is still reachable.",
+      "rare": false
+    },
+    "UDP-VSE": {
+      "family": "UDP-VSE",
+      "training_flows": 283,
+      "share_of_training": 0.0149,
+      "share_flowsentry_unsure_out_of_fold": 0.6219,
+      "typical": {
+        "pkt_count": {
+          "label": "packets in the flow",
+          "median": 2.0,
+          "p25": 1.0,
+          "p75": 5.0
+        },
+        "duration": {
+          "label": "flow duration (s)",
+          "median": 0.000144958,
+          "p25": 0.0,
+          "p75": 0.594763
+        },
+        "pps": {
+          "label": "packets per second",
+          "median": 1.39984,
+          "p25": 0.0,
+          "p75": 46.2909
+        },
+        "avg_pkt_size": {
+          "label": "mean packet size (bytes)",
+          "median": 455.0,
+          "p25": 70.0,
+          "p75": 459.0
+        },
+        "min_pkt": {
+          "label": "smallest packet (bytes)",
+          "median": 70.0,
+          "p25": 70.0,
+          "p75": 456.0
+        },
+        "max_pkt": {
+          "label": "largest packet (bytes)",
+          "median": 455.0,
+          "p25": 70.0,
+          "p75": 459.0
+        },
+        "mean_iat": {
+          "label": "mean gap between packets (s)",
+          "median": 7.05719e-05,
+          "p25": 0.0,
+          "p75": 0.0320563
+        },
+        "directional_asymmetry": {
+          "label": "one-way-ness of the flow (1 = all one way)",
+          "median": 1.0,
+          "p25": 1.0,
+          "p75": 1.0
+        },
+        "fwd_bwd_byte_ratio": {
+          "label": "forward to backward byte ratio",
+          "median": 210.0,
+          "p25": 70.0,
+          "p75": 457.0
+        },
+        "has_quic_subflow": {
+          "label": "carries QUIC",
+          "median": 0.0,
+          "p25": 0.0,
+          "p75": 0.0
+        }
+      },
+      "attack_technique": "T1498.001",
+      "technique_name": "Network Denial of Service: Direct Network Flood",
+      "playbook": "Rate-limit or blackhole the source, engage upstream/cloud DDoS scrubbing, page on-call netops, and confirm the target service is still reachable.",
+      "rare": true
+    },
+    "UDP-bypass-v1": {
+      "family": "UDP-bypass-v1",
+      "training_flows": 156,
+      "share_of_training": 0.0082,
+      "share_flowsentry_unsure_out_of_fold": 0.9038,
+      "typical": {
+        "pkt_count": {
+          "label": "packets in the flow",
+          "median": 3.0,
+          "p25": 1.0,
+          "p75": 4.0
+        },
+        "duration": {
+          "label": "flow duration (s)",
+          "median": 0.000172615,
+          "p25": 0.0,
+          "p75": 0.429467
+        },
+        "pps": {
+          "label": "packets per second",
+          "median": 0.423184,
+          "p25": 0.0,
+          "p75": 55.3262
+        },
+        "avg_pkt_size": {
+          "label": "mean packet size (bytes)",
+          "median": 70.0,
+          "p25": 70.0,
+          "p75": 70.0
+        },
+        "min_pkt": {
+          "label": "smallest packet (bytes)",
+          "median": 70.0,
+          "p25": 70.0,
+          "p75": 70.0
+        },
+        "max_pkt": {
+          "label": "largest packet (bytes)",
+          "median": 70.0,
+          "p25": 70.0,
+          "p75": 70.0
+        },
+        "mean_iat": {
+          "label": "mean gap between packets (s)",
+          "median": 7.37906e-05,
+          "p25": 0.0,
+          "p75": 0.17964
+        },
+        "directional_asymmetry": {
+          "label": "one-way-ness of the flow (1 = all one way)",
+          "median": 1.0,
+          "p25": 1.0,
+          "p75": 1.0
+        },
+        "fwd_bwd_byte_ratio": {
+          "label": "forward to backward byte ratio",
+          "median": 161.5,
+          "p25": 70.0,
+          "p75": 280.0
+        },
+        "has_quic_subflow": {
+          "label": "carries QUIC",
+          "median": 0.0,
+          "p25": 0.0,
+          "p75": 0.0
+        }
+      },
+      "attack_technique": "T1498.001",
+      "technique_name": "Network Denial of Service: Direct Network Flood",
+      "playbook": "Rate-limit or blackhole the source, engage upstream/cloud DDoS scrubbing, page on-call netops, and confirm the target service is still reachable.",
+      "rare": true
+    },
+    "benign": {
+      "family": "benign",
+      "training_flows": 8912,
+      "share_of_training": 0.4679,
+      "share_flowsentry_unsure_out_of_fold": 0.6162,
+      "typical": {
+        "pkt_count": {
+          "label": "packets in the flow",
+          "median": 4.0,
+          "p25": 2.0,
+          "p75": 25.0
+        },
+        "duration": {
+          "label": "flow duration (s)",
+          "median": 0.101266,
+          "p25": 0.000132799,
+          "p75": 3.12872
+        },
+        "pps": {
+          "label": "packets per second",
+          "median": 11.7423,
+          "p25": 0.032294,
+          "p75": 139.837
+        },
+        "avg_pkt_size": {
+          "label": "mean packet size (bytes)",
+          "median": 70.0,
+          "p25": 70.0,
+          "p75": 448.75
+        },
+        "min_pkt": {
+          "label": "smallest packet (bytes)",
+          "median": 70.0,
+          "p25": 69.0,
+          "p75": 70.0
+        },
+        "max_pkt": {
+          "label": "largest packet (bytes)",
+          "median": 70.0,
+          "p25": 70.0,
+          "p75": 1399.0
+        },
+        "mean_iat": {
+          "label": "mean gap between packets (s)",
+          "median": 0.00897104,
+          "p25": 5.93166e-05,
+          "p75": 0.134789
+        },
+        "directional_asymmetry": {
+          "label": "one-way-ness of the flow (1 = all one way)",
+          "median": 1.0,
+          "p25": 0.5,
+          "p75": 1.0
+        },
+        "fwd_bwd_byte_ratio": {
+          "label": "forward to backward byte ratio",
+          "median": 70.0,
+          "p25": 1.1216,
+          "p75": 140.0
+        },
+        "has_quic_subflow": {
+          "label": "carries QUIC",
+          "median": 0.0,
+          "p25": 0.0,
+          "p75": 0.0
+        }
+      },
+      "attack_technique": null,
+      "technique_name": null,
+      "playbook": "No action; benign traffic.",
+      "rare": false
+    }
+  },
+  "precedent_pool": {
+    "source": "training split",
+    "n_training_flows": 19045,
+    "n_stored": 6962,
+    "k": 15
+  },
+  "bundle_sha256": "3ba2a2d55bacb30cda9056e8d51525d7679a4b12715b89815170ce6342a08a28",
+  "versions": {
+    "python": "3.13.13",
+    "numpy": "2.4.6",
+    "scikit-learn": "1.9.0"
+  }
+}

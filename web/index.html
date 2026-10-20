@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlowSentry Desk</title>
+<meta name="description" content="A triage agent for the network flows FlowSentry refuses to call. Every claim cites evidence the server checks.">
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="bar">
+  <div class="brand">
+    <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M4 22 L10 22 L13 12 L17 26 L20 16 L22 22 L28 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div>
+      <h1>FlowSentry Desk</h1>
+      <p class="sub">The flows FlowSentry would not call, pre-read with evidence</p>
+    </div>
+  </div>
+  <nav class="views" aria-label="Views">
+    <button data-view="desk" class="on">Desk</button>
+    <button data-view="results">Results</button>
+    <button data-view="audit">Audit log</button>
+    <button data-view="about">How it works</button>
+  </nav>
+  <div class="who" id="who"></div>
+</header>
+
+<section class="strip" id="strip" aria-label="Queue status">
+  <div class="tally" id="tally"></div>
+  <div class="knob">
+    <label for="cap">Close knob</label>
+    <select id="cap"></select>
+    <span class="knob-note" id="knob-note"></span>
+  </div>
+  <button class="primary" id="batch">Pre-read the next 25</button>
+</section>
+
+<main id="view-desk" class="desk">
+  <aside class="list" aria-label="Queue">
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <ol id="rows" class="rows"></ol>
+    <button class="more" id="more" hidden>Show more</button>
+  </aside>
+
+  <section class="case" id="case" aria-live="polite">
+    <div class="empty">
+      <h2>Pick a case, or let the desk pre-read the queue</h2>
+      <p>FlowSentry sent these 2,315 held-out flows to an analyst because its confidence was under 0.99.
+      The desk reads each one with six read-only tools and proposes close, escalate or ask you.
+      A close needs the agent, the server rules and checked citations to agree.</p>
+      <p class="keys">Keys: <kbd>J</kbd> <kbd>K</kbd> move, <kbd>R</kbd> run, <kbd>A</kbd> approve, <kbd>O</kbd> override</p>
+    </div>
+  </section>
+
+  <aside class="trail" id="trail" aria-label="Evidence trail"></aside>
+</main>
+
+<main id="view-results" class="page" hidden></main>
+<main id="view-audit" class="page" hidden></main>
+<main id="view-about" class="page" hidden></main>
+
+<div id="signin" class="signin" hidden>
+  <div class="signin-card">
+    <h2>Sign in to work the queue</h2>
+    <p>Each analyst gets their own copy of the queue, labels and audit log.</p>
+    <div id="clerk-signin"></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+<script src="/static/app.js"></script>
+</body>
+</html>
