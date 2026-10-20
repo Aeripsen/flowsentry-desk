@@ -183,6 +183,7 @@
   }
   async function openCase(id) {
     S.sel = id;
+    if (location.hash !== "#" + id) history.replaceState(null, "", "#" + id);
     document.querySelectorAll(".rows button").forEach((b) => b.classList.toggle("sel", b.dataset.case === id));
     renderCase(await api(`/api/case/${id}`));
   }
@@ -367,6 +368,12 @@
     const me = await api("/api/me");
     renderKnob(me.close_cap);
     await loadQueue();
+    const m = /^#(C\d{4})$/i.exec(location.hash);
+    if (m) await openCase(m[1].toUpperCase());
   }
+  window.addEventListener("hashchange", () => {
+    const m = /^#(C\d{4})$/i.exec(location.hash);
+    if (m) openCase(m[1].toUpperCase()).catch((e) => toast(esc(e.message)));
+  });
   boot().catch((e) => toast("The desk could not start: " + esc(e.message), 12000));
 })();

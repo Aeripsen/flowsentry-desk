@@ -181,7 +181,8 @@ def policy_run(b: Bundle, pos: int, labels: core.Labels | None = None,
         lines.append(f"The second opinion trained on {so['analyst_labels_so_far']} of your labels "
                      f"says {p['class']} at {p['p']} [{r5}].")
     else:
-        lines.append(f"No second opinion yet: {so['analyst_labels_so_far']} analyst labels [{r5}].")
+        n = so["analyst_labels_so_far"]
+        lines.append(f"No second opinion yet: {n} analyst label{'' if n == 1 else 's'} [{r5}].")
     verdict = d["verdict"]
     ticket = ""
     cites = [r1, r2, r3, r5]
@@ -195,7 +196,16 @@ def policy_run(b: Bundle, pos: int, labels: core.Labels | None = None,
                   f"{nc['flow_ref']}. FlowSentry confidence {fs['confidence']}; precedents "
                   f"{pr['of_15_nearest']}. Suggested response: {fc.get('playbook')}")
     else:
-        lines.append("The signals disagree, so the desk does not guess: a person should decide.")
+        mine = [m for m in pr.get("your_labelled_cases_nearby", [])
+                if m["inside_neighbourhood"] and m["analyst_label"] != "benign"]
+        if d["blocked_by_label"] and mine:
+            lines.append(f"You labelled {mine[0]['case_id']} as {mine[0]['analyst_label']}, and it sits inside "
+                         f"this flow's neighbourhood [{r3}], so the desk will not close it on its own.")
+        elif fs["predicted"] == "benign" and share >= 0.5:
+            lines.append("FlowSentry and the precedents lean benign, but the desk's independent close check is "
+                         "not confident enough at this knob setting, so a person should decide.")
+        else:
+            lines.append("The signals disagree, so the desk does not guess: a person should decide.")
     _step(run, ctx, "propose", {"verdict": verdict, "family": d["family"],
                                 "memo": " ".join(lines), "citations": cites, "ticket": ticket})
     run.seconds = round(time.time() - t0, 3)
