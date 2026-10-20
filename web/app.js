@@ -126,7 +126,8 @@
       if (fin.ticket) body += `<div class="ticket"><h4>Ticket draft for on-call</h4>${memoHtml(fin.ticket, ok)}</div>`;
       const eng = run.engine === "policy" ? "deterministic policy (no model)" : `${esc(run.engine)} ${esc(run.model)}`;
       body += `<p class="meta">${run.recorded ? "Recorded run" : "Run"} by ${eng}. ${run.steps.length} steps, ${fmt(run.seconds)} s${run.tokens_in ? `, ${run.tokens_in} tokens in, ${run.tokens_out} out` : ""}. Citations ${run.citations_ok ? "checked" : "failed the check"}.</p>`;
-      const opts = cls.map((k) => `<option value="${k}">${k}</option>`).join("");
+      const pre = fin.verdict === "escalate" ? fin.family : "benign";
+      const opts = cls.map((k) => `<option value="${k}"${k === pre ? " selected" : ""}>${k}</option>`).join("");
       if (lab) {
         body += `<div class="actions labelled"><span>You labelled this <b>${esc(lab.label)}</b> (${esc(lab.source)}).</span><button class="ghost" id="reopen">Reopen</button></div>`;
       } else {
@@ -251,7 +252,7 @@
         <div class="fig"><div class="n">${o.desk_order.items_to_find_50pct_of_attacks}</div><div class="l">items worked to find half the attacks in the desk's order, against ${o.flowsentry_order.items_to_find_50pct_of_attacks} in FlowSentry's</div></div>
         <div class="fig"><div class="n">${def.escalated_true_attack} of ${def.escalated}</div><div class="l">escalations are attacks; ${def.escalated_family_correct} name the right family</div></div>
       </div>
-      <p class="caveat">${esc(e.caveat)}</p>
+      <p class="caveat">${esc(e.caveat.charAt(0).toUpperCase() + e.caveat.slice(1))}</p>
       <h3>The close knob</h3>
       <p>Each setting is a cap on attacks wrongly closed per 1,000 closed, certified as a 95% upper bound on training data only. The test queue was scored once at every setting. The strictest caps cannot be certified on this sample, so at those settings the desk closes nothing.</p>
       <div class="panel"><table class="data"><thead><tr><th>Cap (training)</th><th>Certified</th><th>Queue closed</th><th>Attacks closed</th><th>Per 1,000 closed (95% CI)</th><th>Queued attacks closed</th><th>Decisions per 100</th></tr></thead><tbody>${knobRows}</tbody></table></div>

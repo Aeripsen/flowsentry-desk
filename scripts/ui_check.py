@@ -53,11 +53,15 @@ def main() -> int:
             if scheme == "light":
                 pg.click("[data-tab=needs_you]")
                 pg.wait_for_selector(".rows li button")
-                pg.click(".rows li button")
+                cid = pg.locator(".rows li button").first.get_attribute("data-case")
+                pg.click(f".rows li button[data-case='{cid}']")
+                pg.wait_for_selector(f".case-head h2:text-is('{cid}')")
                 pg.wait_for_selector("#lab")
                 pg.select_option("#lab", "benign")
                 pg.click("#override")
                 pg.wait_for_selector(".labelled")
+                if "benign" not in pg.locator(".labelled").inner_text():
+                    errors.append("the saved label is not the one chosen")
                 pg.screenshot(path=out / "03_labelled.png", full_page=True)
                 for view in ("results", "audit", "about"):
                     pg.click(f"[data-view={view}]")
