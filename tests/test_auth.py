@@ -71,3 +71,11 @@ def test_anon_mode_issues_a_workspace():
     assert a.kind == "anon" and cookie and a.workspace.startswith("anon:")
     a2, c2 = auth.from_request({}, {auth.COOKIE: cookie})
     assert a2.workspace == a.workspace and c2 is None
+
+
+def test_optional_mode_allows_anonymous_and_verifies_tokens(monkeypatch):
+    monkeypatch.setenv("DESK_AUTH", "optional")
+    a, _ = auth.from_request({}, {"__session": "stale-cookie-is-ignored"})
+    assert a.kind == "anon"
+    with pytest.raises(auth.AuthError):
+        auth.from_request({"authorization": "Bearer not.a.token"}, {})

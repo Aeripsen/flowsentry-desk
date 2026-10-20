@@ -165,19 +165,32 @@ def explain_queue(model, Xq: np.ndarray, escalated: np.ndarray, classes: list[st
 
 
 def knn(query: np.ndarray, pool: np.ndarray, k: int, chunk: int = 256):
-    """Exact Euclidean k nearest neighbours, chunked to stay inside a small memory budget."""
+    """Exact Euclidean k nearest neighbours, chunked to fit a small memory budget.
+
+    Deterministic across machines: squared distances are rounded to 1e-5 before ranking and
+    ties go to the lower pool index, so BLAS rounding differences between CPUs cannot reorder
+    near-identical flows (the sample has many exact duplicates)."""
+    from threadpoolctl import threadpool_limits
+
     idx = np.empty((query.shape[0], k), dtype=np.int64)
     dist = np.empty((query.shape[0], k), dtype=np.float32)
-    pool_sq = (pool.astype(np.float64) ** 2).sum(1)
-    for s in range(0, query.shape[0], chunk):
-        q = query[s:s + chunk].astype(np.float64)
-        d2 = (q ** 2).sum(1)[:, None] + pool_sq[None, :] - 2.0 * q @ pool.T.astype(np.float64)
-        np.maximum(d2, 0, out=d2)
-        part = np.argpartition(d2, k - 1, axis=1)[:, :k]
-        pd = np.take_along_axis(d2, part, 1)
-        order = np.argsort(pd, axis=1, kind="stable")
-        idx[s:s + chunk] = np.take_along_axis(part, order, 1)
-        dist[s:s + chunk] = np.sqrt(np.take_along_axis(pd, order, 1))
+    P = pool.astype(np.float64)
+    pool_sq = (P ** 2).sum(1)
+    with threadpool_limits(1):
+        for s in range(0, query.shape[0], chunk):
+            q = query[s:s + chunk].astype(np.float64)
+            d2 = (q ** 2).sum(1)[:, None] + pool_sq[None, :] - 2.0 * q @ P.T
+            np.maximum(d2, 0, out=d2)
+            d2 = np.round(d2, 5)
+            kth = np.partition(d2, k - 1, axis=1)[:, k - 1]
+            for r in range(d2.shape[0]):
+                row = d2[r]
+                less = np.nonzero(row < kth[r])[0]
+                eq = np.nonzero(row == kth[r])[0][: k - len(less)]
+                sel = np.concatenate([less, eq])
+                order = np.lexsort((sel, row[sel]))
+                idx[s + r] = sel[order]
+                dist[s + r] = np.sqrt(row[sel[order]])
     return idx, dist
 
 
@@ -249,7 +262,10 @@ class FoldEnsemble:
         self.models = models
 
     def score(self, M: np.ndarray) -> np.ndarray:
-        return np.mean([m.predict_proba(M)[:, 1] for m in self.models], axis=0)
+        from threadpoolctl import threadpool_limits
+
+        with threadpool_limits(1):
+            return np.mean([m.predict_proba(M)[:, 1] for m in self.models], axis=0)
 
 
 def gate_matrix(Z, gfeats, proba):
@@ -273,7 +289,7 @@ def build_gate(X, y, groups, tr, classes, med, scale):
     gtr = groups[tr]
     ytr = y[tr]
     n = len(tr)
-    cache = S.BUILD_DIR / "gate_oof_v2.npz"
+    cache = S.BUILD_DIR / "gate_oof_v3.npz"
     if cache.exists():
         z = np.load(cache)
         oof_conf, oof_proba, feats = z["conf"], z["proba"], z["feats"]
@@ -321,10 +337,14 @@ def build_gate(X, y, groups, tr, classes, med, scale):
     th, gh = target[hard], gtr[hard]
     oof_scores = np.zeros(len(th))
     models = []
-    for a, b in GroupKFold(n_splits=5).split(M, groups=gh):
-        mdl = make_gate_model().fit(M[a], th[a])
-        oof_scores[b] = mdl.predict_proba(M[b])[:, 1]
-        models.append(mdl)
+    from threadpoolctl import threadpool_limits
+
+    # one thread: histogram sums in a fixed order, so the gate is the same on every machine
+    with threadpool_limits(1):
+        for a, b in GroupKFold(n_splits=5).split(M, groups=gh):
+            mdl = make_gate_model().fit(M[a], th[a])
+            oof_scores[b] = mdl.predict_proba(M[b])[:, 1]
+            models.append(mdl)
     auc = float(roc_auc_score(th, oof_scores))
     log(f"gate out-of-fold AUC (benign vs attack, training queue): {auc:.4f}")
     n_att = int((th == 0).sum())

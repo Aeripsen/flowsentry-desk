@@ -1,0 +1,44 @@
+name: deploy to Hugging Face Space
+
+# Runs only after Sepehr sets two things on this repo (docs/HIS_CLICKS.md, step 3):
+#   Settings > Secrets and variables > Actions > Secrets:   HF_TOKEN  (a WRITE token)
+#   Settings > Secrets and variables > Actions > Variables: HF_SPACE  (e.g. sepehrjafari81/flowsentry-desk)
+# Until then the job is skipped and nothing is pushed anywhere.
+
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: ${{ vars.HF_SPACE != '' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: python scripts/make_hf_space.py --out space
+      - run: pip install "huggingface_hub>=0.30"
+      - name: upload to the Space (created PRIVATE if it does not exist yet)
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE: ${{ vars.HF_SPACE }}
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          space = os.environ["HF_SPACE"]
+          api.create_repo(space, repo_type="space", space_sdk="docker", private=True, exist_ok=True)
+          api.upload_folder(folder_path="space", repo_id=space, repo_type="space",
+                            commit_message="deploy " + os.environ["GITHUB_SHA"][:7],
+                            delete_patterns=["*"])
+          print("uploaded to https://huggingface.co/spaces/" + space)
+          PY

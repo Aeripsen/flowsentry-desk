@@ -12,7 +12,7 @@
   const TABS = [["all", "All"], ["needs_you", "Needs you"], ["escalated", "Escalated"], ["closed", "Closed"], ["todo", "Not read"], ["done", "Labelled"]];
 
   async function token() {
-    if (S.clerk && S.clerk.session) return await S.clerk.session.getToken();
+    if (S.clerk && S.clerk.isSignedIn && S.clerk.session) return await S.clerk.session.getToken();
     return null;
   }
   async function api(path, opts = {}) {
@@ -51,6 +51,11 @@
     await loadScript(`https://${fapi}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`, { "data-clerk-publishable-key": S.cfg.clerk_publishable_key });
     await window.Clerk.load({ ui: { ClerkUI: window.__internal_ClerkUICtor } });
     S.clerk = window.Clerk;
+    if (!S.clerk.isSignedIn && S.cfg.auth === "optional") {
+      $("#who").innerHTML = '<button class="ghost signin-btn" id="signin-open">Sign in to keep your workspace</button>';
+      S.clerk.addListener(({ user }) => { if (user) location.reload(); });
+      return true;
+    }
     if (!S.clerk.isSignedIn) {
       $("#signin").hidden = false;
       S.clerk.mountSignIn($("#clerk-signin"));
@@ -312,6 +317,7 @@
     if (t.dataset.view) { await show(t.dataset.view); return; }
     switch (t.id) {
       case "more": await loadQueue(true); break;
+      case "signin-open": S.clerk.openSignIn(); break;
       case "run": await runCase("auto"); break;
       case "rerun": await runCase("auto"); break;
       case "approve": await decide("approve"); break;
@@ -350,7 +356,7 @@
 
   async function boot() {
     S.cfg = await api("/api/config");
-    if (S.cfg.auth === "clerk") {
+    if (S.cfg.auth === "clerk" || S.cfg.auth === "optional") {
       try { if (!(await setupClerk())) return; } catch (e) { toast("Sign-in could not load: " + esc(e.message), 12000); return; }
     } else {
       $("#who").textContent = "Demo analyst";

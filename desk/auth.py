@@ -1,6 +1,7 @@
 """Who is the analyst: Clerk sign-in behind a flag, an anonymous browser workspace otherwise.
 
-DESK_AUTH=clerk turns sign-in on. It needs CLERK_PUBLISHABLE_KEY (the browser loads Clerk
+DESK_AUTH=clerk makes sign-in required; DESK_AUTH=optional lets anyone work anonymously and
+gives signed-in analysts a workspace that follows them across devices. It needs CLERK_PUBLISHABLE_KEY (the browser loads Clerk
 from the Frontend API encoded in it) and verifies each request's session token itself:
 RS256 signature against Clerk's JWKS (or CLERK_JWT_KEY, a PEM public key, with no network
 call), exp and nbf, and azp against DESK_ALLOWED_ORIGINS. The workspace is the Clerk user id.
@@ -27,8 +28,13 @@ class Analyst:
     actor: str         # what the audit log records
 
 
+def mode() -> str:
+    m = os.environ.get("DESK_AUTH", "anon").strip().lower()
+    return m if m in ("anon", "clerk", "optional") else "anon"
+
+
 def clerk_enabled() -> bool:
-    return os.environ.get("DESK_AUTH", "anon").strip().lower() == "clerk"
+    return mode() in ("clerk", "optional")
 
 
 def publishable_key() -> str | None:
@@ -94,11 +100,14 @@ def from_request(headers: dict, cookies: dict) -> tuple[Analyst | None, str | No
     """(analyst, new_cookie_value). Raises AuthError when Clerk is on and the token is bad."""
     if clerk_enabled():
         h = headers.get("authorization", "")
-        token = h[7:] if h.lower().startswith("bearer ") else cookies.get("__session")
-        if not token:
+        token = h[7:] if h.lower().startswith("bearer ") else None
+        if token is None and mode() == "clerk":
+            token = cookies.get("__session")
+        if token:
+            c = verify_clerk_token(token)
+            return Analyst(workspace=f"clerk:{c['sub']}", kind="clerk", actor=c["sub"]), None
+        if mode() == "clerk":
             raise AuthError("sign in first")
-        c = verify_clerk_token(token)
-        return Analyst(workspace=f"clerk:{c['sub']}", kind="clerk", actor=c["sub"]), None
     tok = cookies.get(COOKIE)
     new = None
     if not tok or len(tok) < 20:

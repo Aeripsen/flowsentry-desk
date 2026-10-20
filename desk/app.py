@@ -154,7 +154,7 @@ def config():
     b = load()
     eng = live_engine()
     return {
-        "auth": "clerk" if auth.clerk_enabled() else "anon",
+        "auth": auth.mode(),
         "clerk_publishable_key": auth.publishable_key() if auth.clerk_enabled() else None,
         "clerk_frontend_api": auth.frontend_api() if auth.clerk_enabled() else None,
         "live_engine": {"engine": eng[0], "model": eng[1]} if eng else None,

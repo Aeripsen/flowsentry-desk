@@ -31,7 +31,7 @@
     "training_queue_benign_share": 0.7908,
     "inputs": "132 flow features (signed log, robust scaled) + FlowSentry's 8 out-of-fold class probabilities + 8 precedent statistics: fs_p_benign, fs_confidence, fs_escalated, knn_benign_share, knn_benign_share_weighted, log_d_nearest_benign, log_d_nearest_attack, log_d_ratio",
     "model": "5 HistGradientBoosting models, one per connection-grouped fold; the score is their mean; the threshold is picked on their out-of-fold scores",
-    "out_of_fold_auc": 0.8395,
+    "out_of_fold_auc": 0.8375,
     "knob": [
       {
         "cap_per_1000": 10.0,
@@ -40,99 +40,103 @@
       },
       {
         "cap_per_1000": 20.0,
-        "met_on_training": false,
-        "threshold": null
+        "met_on_training": true,
+        "threshold": 0.9991401554970177,
+        "training_closed": 196,
+        "training_attacks_closed": 0,
+        "training_share_closed": 0.0282,
+        "training_share_of_attacks_closed": 0.0
       },
       {
         "cap_per_1000": 30.0,
         "met_on_training": true,
-        "threshold": 0.990743527513804,
-        "training_closed": 1234,
-        "training_attacks_closed": 25,
-        "training_share_closed": 0.1777,
-        "training_share_of_attacks_closed": 0.0172
+        "threshold": 0.9919500731063113,
+        "training_closed": 1195,
+        "training_attacks_closed": 24,
+        "training_share_closed": 0.1721,
+        "training_share_of_attacks_closed": 0.0165
       },
       {
         "cap_per_1000": 50.0,
         "met_on_training": true,
-        "threshold": 0.9796162495159582,
-        "training_closed": 1602,
-        "training_attacks_closed": 63,
-        "training_share_closed": 0.2307,
-        "training_share_of_attacks_closed": 0.0434
+        "threshold": 0.981946484730794,
+        "training_closed": 1548,
+        "training_attacks_closed": 60,
+        "training_share_closed": 0.2229,
+        "training_share_of_attacks_closed": 0.0413
       },
       {
         "cap_per_1000": 100.0,
         "met_on_training": true,
-        "threshold": 0.7881668264536867,
-        "training_closed": 5348,
-        "training_attacks_closed": 491,
-        "training_share_closed": 0.7701,
-        "training_share_of_attacks_closed": 0.3379
+        "threshold": 0.791628319237987,
+        "training_closed": 5333,
+        "training_attacks_closed": 490,
+        "training_share_closed": 0.7679,
+        "training_share_of_attacks_closed": 0.3372
       }
     ],
     "default_rule": "the strictest cap in the knob that the training data can certify",
-    "cap_per_1000": 30.0,
-    "threshold": 0.990743527513804,
-    "training_closed": 1234,
-    "training_attacks_closed": 25,
-    "training_wilson_upper_per_1000": 29.74,
+    "cap_per_1000": 20.0,
+    "threshold": 0.9991401554970177,
+    "training_closed": 196,
+    "training_attacks_closed": 0,
+    "training_wilson_upper_per_1000": 19.22,
     "training_curve": [
       {
         "threshold": 0.5,
-        "closed": 5979,
-        "attacks_closed": 715,
-        "share_closed": 0.8609,
-        "wilson_upper_per_1000": 128.06
+        "closed": 5973,
+        "attacks_closed": 728,
+        "share_closed": 0.86,
+        "wilson_upper_per_1000": 130.42
       },
       {
         "threshold": 0.8,
-        "closed": 5305,
+        "closed": 5300,
         "attacks_closed": 480,
-        "share_closed": 0.7639,
-        "wilson_upper_per_1000": 98.5
+        "share_closed": 0.7631,
+        "wilson_upper_per_1000": 98.59
       },
       {
         "threshold": 0.9,
-        "closed": 4333,
-        "attacks_closed": 339,
-        "share_closed": 0.6239,
-        "wilson_upper_per_1000": 86.61
+        "closed": 4574,
+        "attacks_closed": 363,
+        "share_closed": 0.6586,
+        "wilson_upper_per_1000": 87.55
       },
       {
         "threshold": 0.95,
-        "closed": 2321,
-        "attacks_closed": 129,
-        "share_closed": 0.3342,
-        "wilson_upper_per_1000": 65.66
+        "closed": 2340,
+        "attacks_closed": 123,
+        "share_closed": 0.3369,
+        "wilson_upper_per_1000": 62.36
       },
       {
         "threshold": 0.98,
-        "closed": 1589,
-        "attacks_closed": 62,
-        "share_closed": 0.2288,
-        "wilson_upper_per_1000": 49.7
+        "closed": 1611,
+        "attacks_closed": 66,
+        "share_closed": 0.232,
+        "wilson_upper_per_1000": 51.79
       },
       {
         "threshold": 0.99,
-        "closed": 1264,
-        "attacks_closed": 29,
-        "share_closed": 0.182,
-        "wilson_upper_per_1000": 32.76
+        "closed": 1294,
+        "attacks_closed": 34,
+        "share_closed": 0.1863,
+        "wilson_upper_per_1000": 36.49
       },
       {
         "threshold": 0.995,
-        "closed": 961,
-        "attacks_closed": 17,
-        "share_closed": 0.1384,
-        "wilson_upper_per_1000": 28.15
+        "closed": 964,
+        "attacks_closed": 13,
+        "share_closed": 0.1388,
+        "wilson_upper_per_1000": 22.94
       },
       {
         "threshold": 0.998,
-        "closed": 500,
-        "attacks_closed": 7,
-        "share_closed": 0.072,
-        "wilson_upper_per_1000": 28.61
+        "closed": 512,
+        "attacks_closed": 6,
+        "share_closed": 0.0737,
+        "wilson_upper_per_1000": 25.33
       }
     ]
   },
@@ -717,10 +721,10 @@
   "precedent_pool": {
     "source": "training split",
     "n_training_flows": 19045,
-    "n_stored": 6962,
+    "n_stored": 6924,
     "k": 15
   },
-  "bundle_sha256": "3ba2a2d55bacb30cda9056e8d51525d7679a4b12715b89815170ce6342a08a28",
+  "bundle_sha256": "2aee8bb87a740cc38ca6a84010ffc72bafe50c6eb85df203d33a38469f306045",
   "versions": {
     "python": "3.13.13",
     "numpy": "2.4.6",

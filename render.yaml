@@ -1,0 +1,13 @@
+# Backup host: Render free web service from this repo's Dockerfile (docs/HIS_CLICKS.md, plan B).
+# Render sets PORT itself; the image listens on it. Free instances sleep after 15 minutes idle.
+services:
+  - type: web
+    name: flowsentry-desk
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: DESK_LIVE_AGENT
+        value: "0"
+      - key: ANTHROPIC_API_KEY
+        sync: false
