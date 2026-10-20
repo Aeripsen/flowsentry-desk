@@ -41,7 +41,8 @@ def main() -> int:
             pg.wait_for_function("document.querySelector('#tally').textContent.includes('not read yet') && "
                                  "!document.querySelector('#batch').disabled")
             pg.click("[data-tab=escalated]")
-            pg.wait_for_selector(".rows li button")
+            pg.wait_for_selector("[data-tab=escalated].on")
+            pg.wait_for_selector(".rows li button .pill.ESCALATED")
             pg.click(".rows li button")
             pg.wait_for_selector(".memo .cite")
             cite = pg.locator(".memo .cite").nth(1)
@@ -52,7 +53,8 @@ def main() -> int:
             pg.screenshot(path=out / f"02_escalated_case_{scheme}.png", full_page=True)
             if scheme == "light":
                 pg.click("[data-tab=needs_you]")
-                pg.wait_for_selector(".rows li button")
+                pg.wait_for_selector("[data-tab=needs_you].on")
+                pg.wait_for_selector(".rows li button .pill.HUMAN")
                 cid = pg.locator(".rows li button").first.get_attribute("data-case")
                 pg.click(f".rows li button[data-case='{cid}']")
                 pg.wait_for_selector(f".case-head h2:text-is('{cid}')")
