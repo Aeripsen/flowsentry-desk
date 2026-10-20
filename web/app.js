@@ -231,7 +231,10 @@
     const o = e.ordering;
     const knobRows = e.knob.map((k) => `<tr class="${k.default ? "def" : ""}"><td>${k.cap_per_1000_on_training} per 1,000${k.default ? " (default)" : ""}</td><td>${k.certified_on_training ? "yes" : "no"}</td><td>${pct(k.share_of_queue_closed)}</td><td>${k.attacks_wrongly_closed}</td><td>${k.attacks_wrongly_closed_per_1000_closed ?? "n/a"}${k.per_1000_95ci ? ` (${k.per_1000_95ci[0]} to ${k.per_1000_95ci[1]})` : ""}</td><td>${pct(k.share_of_queued_attacks_closed)}</td><td>${k.analyst_decisions_per_100_items}</td></tr>`).join("");
     const learn = e.learning.map((l) => `<tr><td>${l.analyst_labels}</td><td>${pct(l.rare_family_recall_named_mean)} (sd ${pct(l.rare_family_recall_named_sd)})</td><td>${pct(l.rare_flows_not_closed_mean)}</td><td>${fmt(l.attacks_wrongly_closed_mean)}</td></tr>`).join("");
-    const proj = e.projection_at_default.map((p) => `<tr><td>${pct(p.queue_benign_share)}</td><td>${pct(p.share_of_queue_closed)}</td><td>${p.attacks_per_1000_closed}</td></tr>`).join("");
+    const cert = e.knob.filter((k) => k.certified_on_training && k.cap_per_1000_on_training < 100);
+    const projHead = cert.map((k) => `<th>At ${k.cap_per_1000_on_training} per 1,000</th>`).join("");
+    const proj = cert[0] ? cert[0].projection.map((p, i) => `<tr><td>${pct(p.queue_benign_share)}${i === 0 ? " (this sample)" : ""}</td>${cert.map((k) => `<td>${k.projection[i].attacks_per_1000_closed ?? "n/a"}</td>`).join("")}</tr>`).join("") : "";
+    const k30 = e.knob.find((k) => k.cap_per_1000_on_training === 30) || def;
     const chart = lineChart(o.curve_items, [
       { name: "desk order", ys: o.curve_desk, color: css.getPropertyValue("--closed").trim() },
       { name: "FlowSentry order", ys: o.curve_flowsentry, color: css.getPropertyValue("--human").trim(), dash: "6 4" },
@@ -242,10 +245,10 @@
       <h2>What the desk does to the queue</h2>
       <p class="lede">Measured once on FlowSentry's 2,315-flow reject queue from the held-out split, with an oracle analyst who answers with the dataset's label. Every number below is in <code>reports/eval.json</code>.</p>
       <div class="figs">
-        <div class="fig"><div class="n">${pct(def.share_of_queue_closed)}</div><div class="l">of the queue closed with evidence, at the default knob</div></div>
-        <div class="fig"><div class="n">${def.attacks_wrongly_closed_per_1000_closed}</div><div class="l">attacks wrongly closed per 1,000 closed (95% interval ${def.per_1000_95ci[0]} to ${def.per_1000_95ci[1]})</div></div>
+        <div class="fig"><div class="n">${def.attacks_wrongly_closed}</div><div class="l">attacks closed at the default setting (${def.cap_per_1000_on_training} per 1,000), which closes ${def.auto_closed} flows, ${pct(def.share_of_queue_closed)} of the queue</div></div>
+        <div class="fig"><div class="n">${pct(k30.share_of_queue_closed)}</div><div class="l">of the queue closed at ${k30.cap_per_1000_on_training} per 1,000, with ${k30.attacks_wrongly_closed} attacks among them (${k30.attacks_wrongly_closed_per_1000_closed} per 1,000)</div></div>
         <div class="fig"><div class="n">${o.desk_order.items_to_find_50pct_of_attacks}</div><div class="l">items worked to find half the attacks in the desk's order, against ${o.flowsentry_order.items_to_find_50pct_of_attacks} in FlowSentry's</div></div>
-        <div class="fig"><div class="n">${def.analyst_decisions_per_100_items}</div><div class="l">analyst decisions per 100 queue items, down from 100 (${def.of_which_one_key_confirmations} of them one-key confirmations)</div></div>
+        <div class="fig"><div class="n">${def.escalated_true_attack} of ${def.escalated}</div><div class="l">escalations are attacks; ${def.escalated_family_correct} name the right family</div></div>
       </div>
       <p class="caveat">${esc(e.caveat)}</p>
       <h3>The close knob</h3>
@@ -258,8 +261,8 @@
       <p>Rare-family flows the desk escalates under the right family name, on the flows nobody labelled yet, as labels accumulate (20 random label orders). This effect is small on this sample; the larger effect of labels is that a labelled attack nearby blocks closes.</p>
       <div class="panel"><table class="data"><thead><tr><th>Analyst labels</th><th>Rare family named correctly</th><th>Rare flows not closed</th><th>Attacks wrongly closed</th></tr></thead><tbody>${learn}</tbody></table></div>
       <h3>If the queue were more benign</h3>
-      <p>A reweighting of the measured close rates, not a measurement: per-1,000 figures depend on how benign the queue is, and this sample caps benign traffic.</p>
-      <div class="panel"><table class="data"><thead><tr><th>Benign share of queue</th><th>Queue closed</th><th>Attacks per 1,000 closed</th></tr></thead><tbody>${proj}</tbody></table></div>
+      <p>Attacks per 1,000 closed if the queue were more benign. A reweighting of the measured close rates, not a measurement: this sample caps benign traffic.</p>
+      <div class="panel"><table class="data"><thead><tr><th>Benign share of queue</th>${projHead}</tr></thead><tbody>${proj}</tbody></table></div>
       ${ag ? `<h3>The model-driven agent</h3><p>${esc(ag.summary || "")}</p>` : `<h3>The model-driven agent</h3><p>Recorded model runs are evaluated separately in <code>reports/agent_eval.json</code> once a model key is configured. A model run can only close a subset of what these rules close.</p>`}
     `;
   }

@@ -45,15 +45,15 @@ def set_db(d: DB) -> None:
 
 
 @lru_cache(maxsize=1)
-def recorded_runs() -> dict[tuple[str, str], dict]:
-    """(case_id, labels fingerprint) -> latest recorded run made at the default knob."""
-    out: dict[tuple[str, str], dict] = {}
+def recorded_runs() -> dict[tuple[str, str, float | None], dict]:
+    """(case_id, labels fingerprint, knob cap or None for the default) -> latest recorded run."""
+    out: dict[tuple[str, str, float | None], dict] = {}
     path = S.RUNS_DIR / "recorded.jsonl"
     if path.exists():
         for line in path.read_text(encoding="utf-8").splitlines():
             if line.strip():
                 r = json.loads(line)
-                out[(r["case_id"], r.get("labels_fingerprint", "none"))] = r
+                out[(r["case_id"], r.get("labels_fingerprint", "none"), r.get("cap"))] = r
     return out
 
 
@@ -230,10 +230,10 @@ def _do_run(b: Bundle, pos: int, a: auth.Analyst, engine: str) -> dict:
         if engine == "model":
             raise HTTPException(429, "today's live model runs are used up; the policy still works")
         use_model = False
-    rec = recorded_runs().get((cid, labels.fingerprint()))
+    rec = recorded_runs().get((cid, labels.fingerprint(), cap))
     if use_model:
         run = agent.model_run(b, pos, labels, eng, cap=cap).to_dict()
-    elif engine in ("auto", "recorded_or_policy") and rec and cap is None:
+    elif engine in ("auto", "recorded_or_policy") and rec:
         run = dict(rec, recorded=True)
     else:
         run = agent.policy_run(b, pos, labels, cap=cap).to_dict()

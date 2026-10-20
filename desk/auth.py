@@ -1,8 +1,9 @@
 """Who is the analyst: Clerk sign-in behind a flag, an anonymous browser workspace otherwise.
 
 DESK_AUTH=clerk makes sign-in required; DESK_AUTH=optional lets anyone work anonymously and
-gives signed-in analysts a workspace that follows them across devices. It needs CLERK_PUBLISHABLE_KEY (the browser loads Clerk
-from the Frontend API encoded in it) and verifies each request's session token itself:
+gives signed-in analysts a workspace that follows them across devices. Both need
+CLERK_PUBLISHABLE_KEY (the browser loads Clerk from the Frontend API encoded in it). The
+server verifies each request's session token itself:
 RS256 signature against Clerk's JWKS (or CLERK_JWT_KEY, a PEM public key, with no network
 call), exp and nbf, and azp against DESK_ALLOWED_ORIGINS. The workspace is the Clerk user id.
 

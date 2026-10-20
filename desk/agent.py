@@ -102,6 +102,7 @@ class Run:
     engine: str
     model: str
     labels_fingerprint: str
+    cap: float | None = None
     steps: list[dict] = field(default_factory=list)
     final: dict | None = None
     outcome: str = "HUMAN"
@@ -155,7 +156,7 @@ def policy_run(b: Bundle, pos: int, labels: core.Labels | None = None,
     t0 = time.time()
     ctx = tools.CaseContext(b=b, pos=pos, labels=labels, cap=cap)
     run = Run(case_id=ctx.case_id, engine="policy", model="rules v1",
-              labels_fingerprint=labels.fingerprint())
+              labels_fingerprint=labels.fingerprint(), cap=cap)
     nc = _step(run, ctx, "next_case", {})
     ex = _step(run, ctx, "explain", {"toward": "predicted", "top": 6})
     pr = _step(run, ctx, "precedents", {"k": 8})
@@ -344,7 +345,7 @@ def model_run(b: Bundle, pos: int, labels: core.Labels | None = None,
     provider, model = engine
     ctx = tools.CaseContext(b=b, pos=pos, labels=labels, cap=cap)
     run = Run(case_id=ctx.case_id, engine=provider, model=model,
-              labels_fingerprint=labels.fingerprint())
+              labels_fingerprint=labels.fingerprint(), cap=cap)
     t0 = time.time()
     try:
         if provider == "anthropic":

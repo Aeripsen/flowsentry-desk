@@ -24,12 +24,12 @@ from desk import settings as S  # noqa: E402
 from desk.store import load  # noqa: E402
 
 
-def demo_path() -> list[tuple[str, list[tuple[str, str]]]]:
+def demo_path() -> list[tuple[str, list[tuple[str, str]], float | None]]:
     path = ROOT / "runs" / "demo_path.json"
     if not path.exists():
         return []
     d = json.loads(path.read_text(encoding="utf-8"))
-    return [(step["case_id"], [tuple(x) for x in step["labels"]]) for step in d["steps"]]
+    return [(step["case_id"], [tuple(x) for x in step["labels"]], step.get("cap")) for step in d["steps"]]
 
 
 def main() -> None:
@@ -43,17 +43,18 @@ def main() -> None:
     if eng is None:
         raise SystemExit("no model key configured: put ANTHROPIC_API_KEY in .env (see docs/HIS_CLICKS.md)")
     b = load()
-    jobs: list[tuple[str, list[tuple[str, str]]]] = [(b.case_id(int(b.order[k])), []) for k in range(args.n)]
-    jobs += [(c, []) for c in args.cases]
+    jobs: list[tuple[str, list[tuple[str, str]], float | None]] = [
+        (b.case_id(int(b.order[k])), [], None) for k in range(args.n)]
+    jobs += [(c, [], None) for c in args.cases]
     if args.demo_path:
         jobs += demo_path()
     S.RUNS_DIR.mkdir(exist_ok=True)
     out = S.RUNS_DIR / "recorded.jsonl"
     tin = tout = 0
     with out.open("a", encoding="utf-8", newline="\n") as fh:
-        for i, (cid, pairs) in enumerate(jobs, 1):
+        for i, (cid, pairs, cap) in enumerate(jobs, 1):
             labels = agent.labels_for(b, pairs) if pairs else core.Labels()
-            r = agent.model_run(b, b.pos(cid), labels, eng)
+            r = agent.model_run(b, b.pos(cid), labels, eng, cap=cap)
             d = r.to_dict()
             d["recorded"] = True
             fh.write(json.dumps(d) + "\n")

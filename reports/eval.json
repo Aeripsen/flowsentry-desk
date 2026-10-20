@@ -13,7 +13,7 @@
   },
   "queue_benign_share": 0.7879,
   "caveat": "benign is capped in this sample, so the queue is 78.8% benign; on a real network it would be far more benign. Per-1,000-closed figures depend on that mix; the share of queued attacks closed does not.",
-  "default_cap_per_1000": 30.0,
+  "default_cap_per_1000": 20.0,
   "knob": [
     {
       "cap_per_1000_on_training": 10.0,
@@ -30,159 +30,271 @@
       "queued_attacks": 491,
       "share_of_queued_attacks_closed": 0.0,
       "share_of_queued_benign_closed": 0.0,
-      "escalated": 187,
-      "escalated_true_attack": 167,
-      "escalated_family_correct": 157,
+      "escalated": 186,
+      "escalated_true_attack": 166,
+      "escalated_family_correct": 156,
       "escalated_benign": 20,
-      "asked_human": 2128,
+      "asked_human": 2129,
       "analyst_decisions_per_100_items": 100.0,
-      "of_which_one_key_confirmations": 8.1,
-      "of_which_full_decisions": 91.9
+      "of_which_one_key_confirmations": 8.0,
+      "of_which_full_decisions": 92.0,
+      "projection": [
+        {
+          "queue_benign_share": 0.788,
+          "share_of_queue_closed": 0.0,
+          "attacks_per_1000_closed": null
+        },
+        {
+          "queue_benign_share": 0.9,
+          "share_of_queue_closed": 0.0,
+          "attacks_per_1000_closed": null
+        },
+        {
+          "queue_benign_share": 0.95,
+          "share_of_queue_closed": 0.0,
+          "attacks_per_1000_closed": null
+        },
+        {
+          "queue_benign_share": 0.99,
+          "share_of_queue_closed": 0.0,
+          "attacks_per_1000_closed": null
+        }
+      ]
     },
     {
       "cap_per_1000_on_training": 20.0,
-      "certified_on_training": false,
-      "threshold": null,
-      "default": false,
+      "certified_on_training": true,
+      "threshold": 0.9991401554970177,
+      "default": true,
       "queue_items": 2315,
-      "auto_closed": 0,
-      "share_of_queue_closed": 0.0,
+      "auto_closed": 58,
+      "share_of_queue_closed": 0.0251,
       "attacks_wrongly_closed": 0,
-      "attacks_wrongly_closed_per_1000_closed": null,
-      "per_1000_95ci": null,
+      "attacks_wrongly_closed_per_1000_closed": 0.0,
+      "per_1000_95ci": [
+        0.0,
+        62.1
+      ],
       "wrongly_closed_by_family": {},
       "queued_attacks": 491,
       "share_of_queued_attacks_closed": 0.0,
-      "share_of_queued_benign_closed": 0.0,
-      "escalated": 187,
-      "escalated_true_attack": 167,
-      "escalated_family_correct": 157,
+      "share_of_queued_benign_closed": 0.0318,
+      "escalated": 186,
+      "escalated_true_attack": 166,
+      "escalated_family_correct": 156,
       "escalated_benign": 20,
-      "asked_human": 2128,
-      "analyst_decisions_per_100_items": 100.0,
-      "of_which_one_key_confirmations": 8.1,
-      "of_which_full_decisions": 91.9
+      "asked_human": 2071,
+      "analyst_decisions_per_100_items": 97.5,
+      "of_which_one_key_confirmations": 8.0,
+      "of_which_full_decisions": 89.5,
+      "projection": [
+        {
+          "queue_benign_share": 0.788,
+          "share_of_queue_closed": 0.0251,
+          "attacks_per_1000_closed": 0.0
+        },
+        {
+          "queue_benign_share": 0.9,
+          "share_of_queue_closed": 0.0286,
+          "attacks_per_1000_closed": 0.0
+        },
+        {
+          "queue_benign_share": 0.95,
+          "share_of_queue_closed": 0.0302,
+          "attacks_per_1000_closed": 0.0
+        },
+        {
+          "queue_benign_share": 0.99,
+          "share_of_queue_closed": 0.0315,
+          "attacks_per_1000_closed": 0.0
+        }
+      ]
     },
     {
       "cap_per_1000_on_training": 30.0,
       "certified_on_training": true,
-      "threshold": 0.990743527513804,
-      "default": true,
+      "threshold": 0.9919500731063113,
+      "default": false,
       "queue_items": 2315,
-      "auto_closed": 323,
-      "share_of_queue_closed": 0.1395,
-      "attacks_wrongly_closed": 5,
-      "attacks_wrongly_closed_per_1000_closed": 15.5,
+      "auto_closed": 318,
+      "share_of_queue_closed": 0.1374,
+      "attacks_wrongly_closed": 4,
+      "attacks_wrongly_closed_per_1000_closed": 12.6,
       "per_1000_95ci": [
-        6.6,
-        35.7
+        4.9,
+        31.9
+      ],
+      "wrongly_closed_by_family": {
+        "UDP-MULTI": 1,
+        "UDP-VSE": 1,
+        "UDP-bypass-v1": 2
+      },
+      "queued_attacks": 491,
+      "share_of_queued_attacks_closed": 0.0081,
+      "share_of_queued_benign_closed": 0.1721,
+      "escalated": 186,
+      "escalated_true_attack": 166,
+      "escalated_family_correct": 156,
+      "escalated_benign": 20,
+      "asked_human": 1811,
+      "analyst_decisions_per_100_items": 86.3,
+      "of_which_one_key_confirmations": 8.0,
+      "of_which_full_decisions": 78.2,
+      "projection": [
+        {
+          "queue_benign_share": 0.788,
+          "share_of_queue_closed": 0.1374,
+          "attacks_per_1000_closed": 12.6
+        },
+        {
+          "queue_benign_share": 0.9,
+          "share_of_queue_closed": 0.1557,
+          "attacks_per_1000_closed": 5.2
+        },
+        {
+          "queue_benign_share": 0.95,
+          "share_of_queue_closed": 0.1639,
+          "attacks_per_1000_closed": 2.5
+        },
+        {
+          "queue_benign_share": 0.99,
+          "share_of_queue_closed": 0.1705,
+          "attacks_per_1000_closed": 0.5
+        }
+      ]
+    },
+    {
+      "cap_per_1000_on_training": 50.0,
+      "certified_on_training": true,
+      "threshold": 0.981946484730794,
+      "default": false,
+      "queue_items": 2315,
+      "auto_closed": 403,
+      "share_of_queue_closed": 0.1741,
+      "attacks_wrongly_closed": 8,
+      "attacks_wrongly_closed_per_1000_closed": 19.9,
+      "per_1000_95ci": [
+        10.1,
+        38.7
       ],
       "wrongly_closed_by_family": {
         "UDP-MULTI": 1,
         "UDP-OVH": 1,
         "UDP-VSE": 1,
-        "UDP-bypass-v1": 2
-      },
-      "queued_attacks": 491,
-      "share_of_queued_attacks_closed": 0.0102,
-      "share_of_queued_benign_closed": 0.1743,
-      "escalated": 187,
-      "escalated_true_attack": 167,
-      "escalated_family_correct": 157,
-      "escalated_benign": 20,
-      "asked_human": 1805,
-      "analyst_decisions_per_100_items": 86.0,
-      "of_which_one_key_confirmations": 8.1,
-      "of_which_full_decisions": 78.0
-    },
-    {
-      "cap_per_1000_on_training": 50.0,
-      "certified_on_training": true,
-      "threshold": 0.9796162495159582,
-      "default": false,
-      "queue_items": 2315,
-      "auto_closed": 416,
-      "share_of_queue_closed": 0.1797,
-      "attacks_wrongly_closed": 9,
-      "attacks_wrongly_closed_per_1000_closed": 21.6,
-      "per_1000_95ci": [
-        11.4,
-        40.6
-      ],
-      "wrongly_closed_by_family": {
-        "UDP-MULTI": 1,
-        "UDP-OVH": 2,
-        "UDP-VSE": 1,
         "UDP-bypass-v1": 5
       },
       "queued_attacks": 491,
-      "share_of_queued_attacks_closed": 0.0183,
-      "share_of_queued_benign_closed": 0.2231,
-      "escalated": 187,
-      "escalated_true_attack": 167,
-      "escalated_family_correct": 157,
+      "share_of_queued_attacks_closed": 0.0163,
+      "share_of_queued_benign_closed": 0.2166,
+      "escalated": 186,
+      "escalated_true_attack": 166,
+      "escalated_family_correct": 156,
       "escalated_benign": 20,
-      "asked_human": 1712,
-      "analyst_decisions_per_100_items": 82.0,
-      "of_which_one_key_confirmations": 8.1,
-      "of_which_full_decisions": 74.0
+      "asked_human": 1726,
+      "analyst_decisions_per_100_items": 82.6,
+      "of_which_one_key_confirmations": 8.0,
+      "of_which_full_decisions": 74.6,
+      "projection": [
+        {
+          "queue_benign_share": 0.788,
+          "share_of_queue_closed": 0.1741,
+          "attacks_per_1000_closed": 19.9
+        },
+        {
+          "queue_benign_share": 0.9,
+          "share_of_queue_closed": 0.1965,
+          "attacks_per_1000_closed": 8.3
+        },
+        {
+          "queue_benign_share": 0.95,
+          "share_of_queue_closed": 0.2065,
+          "attacks_per_1000_closed": 3.9
+        },
+        {
+          "queue_benign_share": 0.99,
+          "share_of_queue_closed": 0.2146,
+          "attacks_per_1000_closed": 0.8
+        }
+      ]
     },
     {
       "cap_per_1000_on_training": 100.0,
       "certified_on_training": true,
-      "threshold": 0.7881668264536867,
+      "threshold": 0.791628319237987,
       "default": false,
       "queue_items": 2315,
-      "auto_closed": 1706,
-      "share_of_queue_closed": 0.7369,
+      "auto_closed": 1711,
+      "share_of_queue_closed": 0.7391,
       "attacks_wrongly_closed": 148,
-      "attacks_wrongly_closed_per_1000_closed": 86.8,
+      "attacks_wrongly_closed_per_1000_closed": 86.5,
       "per_1000_95ci": [
-        74.3,
-        101.1
+        74.1,
+        100.8
       ],
       "wrongly_closed_by_family": {
         "UDP-GAME": 20,
-        "UDP-HULK": 19,
-        "UDP-MULTI": 20,
+        "UDP-HULK": 21,
+        "UDP-MULTI": 19,
         "UDP-OVH": 30,
         "UDP-RAW": 1,
-        "UDP-VSE": 31,
+        "UDP-VSE": 30,
         "UDP-bypass-v1": 27
       },
       "queued_attacks": 491,
       "share_of_queued_attacks_closed": 0.3014,
-      "share_of_queued_benign_closed": 0.8542,
-      "escalated": 187,
-      "escalated_true_attack": 167,
-      "escalated_family_correct": 157,
+      "share_of_queued_benign_closed": 0.8569,
+      "escalated": 186,
+      "escalated_true_attack": 166,
+      "escalated_family_correct": 156,
       "escalated_benign": 20,
-      "asked_human": 422,
-      "analyst_decisions_per_100_items": 26.3,
-      "of_which_one_key_confirmations": 8.1,
-      "of_which_full_decisions": 18.2
+      "asked_human": 418,
+      "analyst_decisions_per_100_items": 26.1,
+      "of_which_one_key_confirmations": 8.0,
+      "of_which_full_decisions": 18.1,
+      "projection": [
+        {
+          "queue_benign_share": 0.788,
+          "share_of_queue_closed": 0.7391,
+          "attacks_per_1000_closed": 86.5
+        },
+        {
+          "queue_benign_share": 0.9,
+          "share_of_queue_closed": 0.8014,
+          "attacks_per_1000_closed": 37.6
+        },
+        {
+          "queue_benign_share": 0.95,
+          "share_of_queue_closed": 0.8291,
+          "attacks_per_1000_closed": 18.2
+        },
+        {
+          "queue_benign_share": 0.99,
+          "share_of_queue_closed": 0.8514,
+          "attacks_per_1000_closed": 3.5
+        }
+      ]
     }
   ],
   "projection_at_default": [
     {
       "queue_benign_share": 0.788,
-      "share_of_queue_closed": 0.1395,
-      "attacks_per_1000_closed": 15.5
+      "share_of_queue_closed": 0.0251,
+      "attacks_per_1000_closed": 0.0
     },
     {
       "queue_benign_share": 0.9,
-      "share_of_queue_closed": 0.1579,
-      "attacks_per_1000_closed": 6.4
+      "share_of_queue_closed": 0.0286,
+      "attacks_per_1000_closed": 0.0
     },
     {
       "queue_benign_share": 0.95,
-      "share_of_queue_closed": 0.1661,
-      "attacks_per_1000_closed": 3.1
+      "share_of_queue_closed": 0.0302,
+      "attacks_per_1000_closed": 0.0
     },
     {
       "queue_benign_share": 0.99,
-      "share_of_queue_closed": 0.1727,
-      "attacks_per_1000_closed": 0.6
+      "share_of_queue_closed": 0.0315,
+      "attacks_per_1000_closed": 0.0
     }
   ],
   "learning": [
@@ -190,9 +302,9 @@
       "analyst_labels": 0,
       "rare_family_recall_named_mean": 0.0893,
       "rare_family_recall_named_sd": 0.0,
-      "rare_flows_not_closed_mean": 0.9856,
-      "share_closed_mean": 0.1395,
-      "attacks_wrongly_closed_mean": 5.0,
+      "rare_flows_not_closed_mean": 1.0,
+      "share_closed_mean": 0.0251,
+      "attacks_wrongly_closed_mean": 0.0,
       "per_family_recall_named_mean": {
         "UDP-GAME": 0.085,
         "UDP-HULK": 0.07,
@@ -207,9 +319,9 @@
       "analyst_labels": 10,
       "rare_family_recall_named_mean": 0.0937,
       "rare_family_recall_named_sd": 0.0058,
-      "rare_flows_not_closed_mean": 0.9883,
-      "share_closed_mean": 0.1184,
-      "attacks_wrongly_closed_mean": 4.05,
+      "rare_flows_not_closed_mean": 1.0,
+      "share_closed_mean": 0.0222,
+      "attacks_wrongly_closed_mean": 0.0,
       "per_family_recall_named_mean": {
         "UDP-GAME": 0.101,
         "UDP-HULK": 0.073,
@@ -222,15 +334,15 @@
     },
     {
       "analyst_labels": 25,
-      "rare_family_recall_named_mean": 0.0999,
-      "rare_family_recall_named_sd": 0.0091,
-      "rare_flows_not_closed_mean": 0.9894,
-      "share_closed_mean": 0.1165,
-      "attacks_wrongly_closed_mean": 3.65,
+      "rare_family_recall_named_mean": 0.1003,
+      "rare_family_recall_named_sd": 0.0093,
+      "rare_flows_not_closed_mean": 1.0,
+      "share_closed_mean": 0.0222,
+      "attacks_wrongly_closed_mean": 0.0,
       "per_family_recall_named_mean": {
         "UDP-GAME": 0.097,
         "UDP-HULK": 0.079,
-        "UDP-MULTI": 0.241,
+        "UDP-MULTI": 0.243,
         "UDP-OVH": 0.0,
         "UDP-VSE": 0.096,
         "UDP-bypass-v1": 0.031
@@ -239,15 +351,15 @@
     },
     {
       "analyst_labels": 50,
-      "rare_family_recall_named_mean": 0.1009,
+      "rare_family_recall_named_mean": 0.1013,
       "rare_family_recall_named_sd": 0.0144,
-      "rare_flows_not_closed_mean": 0.9885,
-      "share_closed_mean": 0.1252,
-      "attacks_wrongly_closed_mean": 3.9,
+      "rare_flows_not_closed_mean": 1.0,
+      "share_closed_mean": 0.0239,
+      "attacks_wrongly_closed_mean": 0.0,
       "per_family_recall_named_mean": {
         "UDP-GAME": 0.109,
         "UDP-HULK": 0.075,
-        "UDP-MULTI": 0.242,
+        "UDP-MULTI": 0.244,
         "UDP-OVH": 0.001,
         "UDP-VSE": 0.091,
         "UDP-bypass-v1": 0.035
@@ -256,15 +368,15 @@
     },
     {
       "analyst_labels": 100,
-      "rare_family_recall_named_mean": 0.1004,
-      "rare_family_recall_named_sd": 0.0115,
-      "rare_flows_not_closed_mean": 0.9883,
-      "share_closed_mean": 0.1347,
-      "attacks_wrongly_closed_mean": 3.9,
+      "rare_family_recall_named_mean": 0.1005,
+      "rare_family_recall_named_sd": 0.0116,
+      "rare_flows_not_closed_mean": 1.0,
+      "share_closed_mean": 0.0249,
+      "attacks_wrongly_closed_mean": 0.0,
       "per_family_recall_named_mean": {
         "UDP-GAME": 0.121,
         "UDP-HULK": 0.077,
-        "UDP-MULTI": 0.237,
+        "UDP-MULTI": 0.238,
         "UDP-OVH": 0.002,
         "UDP-VSE": 0.092,
         "UDP-bypass-v1": 0.023
@@ -273,15 +385,15 @@
     },
     {
       "analyst_labels": 200,
-      "rare_family_recall_named_mean": 0.1064,
-      "rare_family_recall_named_sd": 0.0141,
-      "rare_flows_not_closed_mean": 0.9877,
-      "share_closed_mean": 0.1352,
-      "attacks_wrongly_closed_mean": 3.9,
+      "rare_family_recall_named_mean": 0.1069,
+      "rare_family_recall_named_sd": 0.0147,
+      "rare_flows_not_closed_mean": 1.0,
+      "share_closed_mean": 0.0246,
+      "attacks_wrongly_closed_mean": 0.0,
       "per_family_recall_named_mean": {
         "UDP-GAME": 0.109,
         "UDP-HULK": 0.08,
-        "UDP-MULTI": 0.245,
+        "UDP-MULTI": 0.247,
         "UDP-OVH": 0.002,
         "UDP-VSE": 0.095,
         "UDP-bypass-v1": 0.056
@@ -515,92 +627,92 @@
       50,
       75,
       100,
-      123,
-      144,
-      161,
-      183,
-      197,
-      209,
+      122,
+      143,
+      162,
+      182,
+      199,
+      210,
       220,
       233,
-      244,
-      257,
-      268,
-      275,
-      288,
-      296,
-      303,
-      314,
-      320,
-      328,
-      333,
+      246,
+      256,
+      264,
+      278,
+      285,
+      295,
+      301,
+      308,
+      317,
+      326,
+      338,
       342,
-      347,
-      353,
-      359,
-      361,
-      364,
-      368,
+      348,
+      356,
+      358,
+      360,
+      365,
       371,
+      374,
       379,
-      382,
-      385,
-      389,
-      391,
-      394,
+      384,
+      390,
       395,
-      396,
-      399,
+      398,
       400,
-      402,
-      404,
-      408,
-      413,
-      416,
-      418,
-      420,
-      425,
-      425,
+      401,
+      403,
+      405,
+      407,
+      409,
+      411,
+      414,
+      419,
+      422,
+      424,
       427,
-      428,
-      432,
+      431,
+      431,
+      433,
       434,
-      434,
-      435,
+      438,
       440,
-      442,
-      443,
+      440,
+      441,
       446,
-      451,
-      456,
-      457,
-      458,
-      458,
+      449,
+      449,
+      450,
+      452,
+      455,
       459,
-      460,
-      464,
+      462,
+      465,
       467,
       469,
-      472,
+      469,
+      469,
+      471,
       474,
-      476,
-      478,
+      475,
+      477,
       480,
       482,
       483,
+      484,
       485,
       486,
       487,
       487,
-      488,
+      487,
+      487,
       488,
       489,
-      489,
       490,
       490,
       490,
       490,
-      490,
+      491,
       491,
       491,
       491
@@ -613,10 +725,10 @@
       "attacks_in_first_500": 198
     },
     "desk_order": {
-      "items_to_find_50pct_of_attacks": 328,
-      "items_to_find_90pct_of_attacks": 1441,
+      "items_to_find_50pct_of_attacks": 325,
+      "items_to_find_90pct_of_attacks": 1402,
       "attacks_in_first_100": 100,
-      "attacks_in_first_500": 314
+      "attacks_in_first_500": 308
     },
     "random_order_mean": {
       "items_to_find_50pct_of_attacks": 1161.3,
@@ -632,7 +744,7 @@
     "training_queue_benign_share": 0.7908,
     "inputs": "132 flow features (signed log, robust scaled) + FlowSentry's 8 out-of-fold class probabilities + 8 precedent statistics: fs_p_benign, fs_confidence, fs_escalated, knn_benign_share, knn_benign_share_weighted, log_d_nearest_benign, log_d_nearest_attack, log_d_ratio",
     "model": "5 HistGradientBoosting models, one per connection-grouped fold; the score is their mean; the threshold is picked on their out-of-fold scores",
-    "out_of_fold_auc": 0.8395,
+    "out_of_fold_auc": 0.8375,
     "knob": [
       {
         "cap_per_1000": 10.0,
@@ -641,44 +753,48 @@
       },
       {
         "cap_per_1000": 20.0,
-        "met_on_training": false,
-        "threshold": null
+        "met_on_training": true,
+        "threshold": 0.9991401554970177,
+        "training_closed": 196,
+        "training_attacks_closed": 0,
+        "training_share_closed": 0.0282,
+        "training_share_of_attacks_closed": 0.0
       },
       {
         "cap_per_1000": 30.0,
         "met_on_training": true,
-        "threshold": 0.990743527513804,
-        "training_closed": 1234,
-        "training_attacks_closed": 25,
-        "training_share_closed": 0.1777,
-        "training_share_of_attacks_closed": 0.0172
+        "threshold": 0.9919500731063113,
+        "training_closed": 1195,
+        "training_attacks_closed": 24,
+        "training_share_closed": 0.1721,
+        "training_share_of_attacks_closed": 0.0165
       },
       {
         "cap_per_1000": 50.0,
         "met_on_training": true,
-        "threshold": 0.9796162495159582,
-        "training_closed": 1602,
-        "training_attacks_closed": 63,
-        "training_share_closed": 0.2307,
-        "training_share_of_attacks_closed": 0.0434
+        "threshold": 0.981946484730794,
+        "training_closed": 1548,
+        "training_attacks_closed": 60,
+        "training_share_closed": 0.2229,
+        "training_share_of_attacks_closed": 0.0413
       },
       {
         "cap_per_1000": 100.0,
         "met_on_training": true,
-        "threshold": 0.7881668264536867,
-        "training_closed": 5348,
-        "training_attacks_closed": 491,
-        "training_share_closed": 0.7701,
-        "training_share_of_attacks_closed": 0.3379
+        "threshold": 0.791628319237987,
+        "training_closed": 5333,
+        "training_attacks_closed": 490,
+        "training_share_closed": 0.7679,
+        "training_share_of_attacks_closed": 0.3372
       }
     ],
     "default_rule": "the strictest cap in the knob that the training data can certify",
-    "cap_per_1000": 30.0,
-    "threshold": 0.990743527513804,
-    "training_closed": 1234,
-    "training_attacks_closed": 25,
-    "training_wilson_upper_per_1000": 29.74
+    "cap_per_1000": 20.0,
+    "threshold": 0.9991401554970177,
+    "training_closed": 196,
+    "training_attacks_closed": 0,
+    "training_wilson_upper_per_1000": 19.22
   },
-  "bundle_sha256": "3ba2a2d55bacb30cda9056e8d51525d7679a4b12715b89815170ce6342a08a28",
-  "seconds": 51.9
+  "bundle_sha256": "2aee8bb87a740cc38ca6a84010ffc72bafe50c6eb85df203d33a38469f306045",
+  "seconds": 64.6
 }

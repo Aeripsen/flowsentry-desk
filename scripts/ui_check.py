@@ -26,7 +26,9 @@ def main() -> int:
     with sync_playwright() as p:
         br = p.chromium.launch()
         for scheme in ("light", "dark"):
-            pg = br.new_page(viewport={"width": 1440, "height": 900}, color_scheme=scheme)
+            # bypass_csp only lets the test's own wait_for_function run; the app's CSP is checked by test_api
+            pg = br.new_context(viewport={"width": 1440, "height": 900}, color_scheme=scheme,
+                                bypass_csp=True).new_page()
             pg.on("pageerror", lambda e: errors.append(f"pageerror: {e}"))
             pg.on("console", lambda m: errors.append(f"console: {m.text}") if m.type == "error"
                   and "fonts.g" not in m.text else None)
@@ -64,7 +66,8 @@ def main() -> int:
                     if view == "audit" and "intact" not in pg.locator("#view-audit").inner_text():
                         errors.append("audit chain not shown as intact")
             pg.close()
-        ph = br.new_page(viewport={"width": 390, "height": 844}, device_scale_factor=2)
+        ph = br.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2,
+                            bypass_csp=True).new_page()
         ph.on("pageerror", lambda e: errors.append(f"pageerror (phone): {e}"))
         ph.goto(args.url)
         ph.wait_for_selector(".rows li")

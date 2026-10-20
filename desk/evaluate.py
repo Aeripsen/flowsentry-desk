@@ -209,7 +209,8 @@ def main() -> dict:
         knob.append({"cap_per_1000_on_training": row["cap_per_1000"],
                      "certified_on_training": row["met_on_training"],
                      "threshold": row["threshold"],
-                     "default": row["cap_per_1000"] == b.default_cap, **s})
+                     "default": row["cap_per_1000"] == b.default_cap, **s,
+                     "projection": projection({}, truth, d, b)})
         print(f"[eval] cap {row['cap_per_1000']}: closed {s['auto_closed']} "
               f"({s['share_of_queue_closed']:.3f}), wrong {s['attacks_wrongly_closed']} "
               f"-> {s['attacks_wrongly_closed_per_1000_closed']} per 1,000", flush=True)

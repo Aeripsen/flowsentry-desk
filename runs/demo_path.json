@@ -1,9 +1,40 @@
 {
-  "what": "The video's override moment. C0072 is one of the 5 attacks the desk wrongly closes at the default knob (a UDP-bypass-v1 flood). An analyst spot-checking closed cases relabels it; the nearby-attack rule then stops the desk from auto-closing three look-alike flows, which go to the analyst instead. Those three are benign in the dataset, so the cost is three extra decisions, not three caught attacks. scripts/record_agent.py --demo-path records model runs for exactly these label states.",
+  "what": "The video's override moment, with the close knob at 30 per 1,000 (the default, 20, closes no attack on this queue). C0072 is one of the 4 attacks the desk wrongly closes at 30: a UDP-bypass-v1 flood. An analyst spot-checking closed cases relabels it; the nearby-attack rule then stops the desk from auto-closing three look-alike flows, which go to the analyst instead. Those three are benign in the dataset, so the cost is three extra decisions, not three caught attacks. scripts/record_agent.py --demo-path records model runs for exactly these states.",
   "steps": [
-    {"case_id": "C0072", "labels": []},
-    {"case_id": "C0896", "labels": [["C0072", "UDP-bypass-v1"]]},
-    {"case_id": "C1340", "labels": [["C0072", "UDP-bypass-v1"]]},
-    {"case_id": "C1353", "labels": [["C0072", "UDP-bypass-v1"]]}
+    {
+      "case_id": "C0072",
+      "labels": [],
+      "cap": 30.0
+    },
+    {
+      "case_id": "C0896",
+      "labels": [
+        [
+          "C0072",
+          "UDP-bypass-v1"
+        ]
+      ],
+      "cap": 30.0
+    },
+    {
+      "case_id": "C1340",
+      "labels": [
+        [
+          "C0072",
+          "UDP-bypass-v1"
+        ]
+      ],
+      "cap": 30.0
+    },
+    {
+      "case_id": "C1353",
+      "labels": [
+        [
+          "C0072",
+          "UDP-bypass-v1"
+        ]
+      ],
+      "cap": 30.0
+    }
   ]
 }
