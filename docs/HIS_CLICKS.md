@@ -37,7 +37,8 @@ token in the Transcendent `.env` is read-only, so it cannot deploy.
    **Add variable**.
 4. Open https://github.com/Aeripsen/flowsentry-desk/actions/workflows/deploy-hf.yml > **Run workflow** > **Run
    workflow**. It creates the Space as **private** and uploads the app. The Space then builds for about 3 minutes.
-5. Check https://huggingface.co/spaces/sepehrjafari81/flowsentry-desk shows the desk. From then on every green CI run
+5. Check https://huggingface.co/spaces/sepehrjafari81/flowsentry-desk shows the desk, then open the direct app URL
+   https://sepehrjafari81-flowsentry-desk.hf.space (this is the link to give judges). From then on every green CI run
    on `main` redeploys it.
 
 ## 4. Optional: live Claude in the Space (2 minutes)
@@ -59,7 +60,11 @@ devices.
    does not need it.
 4. In the Space settings (step 4 page) add variables: `DESK_AUTH` = `optional`, `CLERK_PUBLISHABLE_KEY` = the
    publishable key, `DESK_ALLOWED_ORIGINS` = `https://sepehrjafari81-flowsentry-desk.hf.space`.
-5. Open the Space, click **Sign in to keep your workspace**, sign in once to check it.
+5. Open the direct URL https://sepehrjafari81-flowsentry-desk.hf.space (not the huggingface.co page, where the app
+   sits in a frame and sign-in may not work), click **Sign in to keep your workspace**, and sign in to check it.
+6. If every request then fails with "sign in first" or "token issued for another origin", the origin check is the
+   first suspect: make sure `DESK_ALLOWED_ORIGINS` is exactly the direct URL above, with https and no trailing slash.
+   Anonymous use keeps working either way.
 
 ## 6. Make things public (2 minutes, Sat Oct 24 evening, after the lane says "ready")
 
@@ -69,6 +74,12 @@ The rules require a public repo and a live link.
    public**, type the repo name to confirm.
 2. https://huggingface.co/spaces/sepehrjafari81/flowsentry-desk/settings > **Change Space visibility** > **Public**.
 3. Open both in a private browser window to confirm they load without signing in.
+
+## 6b. Wake the Space before judging (1 minute each, Sun Oct 25 evening and Mon Oct 26 morning)
+
+Free Spaces go to sleep after a while with no visitors, and the first visit then waits for a restart. Open
+https://sepehrjafari81-flowsentry-desk.hf.space on Sun Oct 25 after you submit, and again on Mon Oct 26 before 9:00 AM
+(online judging day). If it shows "Sleeping", click **Restart this Space** and wait until the queue appears.
 
 ## 7. Record the 2-minute video (Sat Oct 24, about 1 hour with retakes)
 
@@ -81,7 +92,7 @@ Follow `docs/VIDEO_SCRIPT.md`. Screen recording with your voice is enough (Windo
    **Create project** (or **Enter a submission**).
 2. Paste the sections of `docs/DEVPOST.md` into the matching fields. "Built with" tags are listed there.
 3. Add every teammate by their Devpost username (the rules say all members must be named).
-4. Links: GitHub repo, the Space URL, the YouTube link.
+4. Links: GitHub repo, the direct app URL https://sepehrjafari81-flowsentry-desk.hf.space, the YouTube link.
 5. Read the preview once, then **Submit**.
 
 ## 9. Demo Day, if top 10 (Thu Oct 29, 5:30 to 8:30 PM, 2 St Clair Ave W, 14th floor)

@@ -13,10 +13,53 @@ import sys
 from pathlib import Path
 
 
+def check_cross_site_iframe(br, app_url: str, port: int, out: Path, errors: list[str]) -> None:
+    """The Hugging Face page shows the app in a cross-site iframe. Serve a wrapper page on
+    localhost:<port> that frames the app on 127.0.0.1, pre-read, reload, and require the work
+    to still be there (cookies are not sent to cross-site frames)."""
+    import http.server
+    import threading
+
+    html = f'<!doctype html><title>wrapper</title><iframe src="{app_url}" width="1400" height="860"></iframe>'.encode()
+
+    class H(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):  # noqa: N802
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.end_headers()
+            self.wfile.write(html)
+
+        def log_message(self, *a):
+            pass
+
+    srv = http.server.ThreadingHTTPServer(("localhost", port), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    try:
+        pg = br.new_context(viewport={"width": 1440, "height": 900}, bypass_csp=True).new_page()
+        pg.goto(f"http://localhost:{port}/")
+        fr = pg.frame_locator("iframe")
+        fr.locator(".rows li").first.wait_for()
+        fr.locator("#batch").click()
+        fr.locator("#tally:has-text('2290')").wait_for(timeout=15000)
+        pg.reload()
+        fr = pg.frame_locator("iframe")
+        fr.locator(".rows li").first.wait_for()
+        pg.wait_for_timeout(800)
+        tally = fr.locator("#tally").inner_text()
+        pg.screenshot(path=out / "07_cross_site_iframe.png")
+        if "2290" not in tally:
+            errors.append(f"work lost across a reload inside a cross-site iframe: {tally!r}")
+        pg.close()
+    finally:
+        srv.shutdown()
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", default="http://127.0.0.1:8000")
     ap.add_argument("--out", default="ui-shots")
+    ap.add_argument("--iframe-port", type=int, default=0,
+                    help="also check the app inside a cross-site iframe served on this port")
     args = ap.parse_args()
     from playwright.sync_api import sync_playwright
 
@@ -77,6 +120,8 @@ def main() -> int:
                     if view == "audit" and "intact" not in pg.locator("#view-audit").inner_text():
                         errors.append("audit chain not shown as intact")
             pg.close()
+        if args.iframe_port:
+            check_cross_site_iframe(br, args.url, args.iframe_port, out, errors)
         ph = br.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2,
                             bypass_csp=True).new_page()
         ph.on("pageerror", lambda e: errors.append(f"pageerror (phone): {e}"))

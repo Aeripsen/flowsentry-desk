@@ -11,12 +11,26 @@
   const OUT = { AUTO_CLOSED: "Closed by the desk", ESCALATED: "Escalated", HUMAN: "Needs you" };
   const TABS = [["all", "All"], ["needs_you", "Needs you"], ["escalated", "Escalated"], ["closed", "Closed"], ["todo", "Not read"], ["done", "Labelled"]];
 
+  // A random workspace id kept in this browser. Sent as a header because the Hugging Face page
+  // shows the app in a cross-site iframe, where cookies are not sent.
+  const WS = (() => {
+    let id = null;
+    try { id = localStorage.getItem("desk_ws"); } catch (_) { /* storage blocked */ }
+    if (!id || id.length < 20) {
+      const b = new Uint8Array(24);
+      crypto.getRandomValues(b);
+      id = Array.from(b, (x) => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"[x % 64]).join("");
+      try { localStorage.setItem("desk_ws", id); } catch (_) { /* keep it in memory */ }
+    }
+    return id;
+  })();
+
   async function token() {
     if (S.clerk && S.clerk.isSignedIn && S.clerk.session) return await S.clerk.session.getToken();
     return null;
   }
   async function api(path, opts = {}) {
-    const headers = { "Content-Type": "application/json" };
+    const headers = { "Content-Type": "application/json", "X-Desk-Workspace": WS };
     const t = await token();
     if (t) headers.Authorization = "Bearer " + t;
     const r = await fetch(path, { credentials: "same-origin", ...opts, headers });
@@ -245,7 +259,7 @@
     const ag = m.agent_eval;
     $("#view-results").innerHTML = `
       <h2>What the desk does to the queue</h2>
-      <p class="lede">Measured once on FlowSentry's 2,315-flow reject queue from the held-out split, with an oracle analyst who answers with the dataset's label. Every number below is in <code>reports/eval.json</code>.</p>
+      <p class="lede">Measured on FlowSentry's 2,315-flow reject queue from the held-out split, with an oracle analyst who answers with the dataset's label. The evaluation was re-run after each review fix and never tuned to these numbers. Every number below is in <code>reports/eval.json</code>.</p>
       <div class="figs">
         <div class="fig"><div class="n">${pct(def.share_of_queue_closed)}</div><div class="l">of the queue closed at the default setting (${def.cap_per_1000_on_training} per 1,000): ${def.auto_closed} flows, ${def.attacks_wrongly_closed === 0 ? "none of them an attack" : def.attacks_wrongly_closed === 1 ? "one of them an attack" : def.attacks_wrongly_closed + " of them attacks"}</div></div>
         <div class="fig"><div class="n">${pct(def.share_of_queued_attacks_closed)}</div><div class="l">of the ${def.queued_attacks} queued attacks closed at the default; the rest are escalated or sent to you</div></div>
@@ -254,7 +268,7 @@
       </div>
       <p class="caveat">${esc(e.caveat.charAt(0).toUpperCase() + e.caveat.slice(1))}</p>
       <h3>The close knob</h3>
-      <p>Each setting is a cap on attacks wrongly closed per 1,000 closed. Its threshold is chosen on a calibration part of the training split by fixed-sequence binomial tests at the 5% level, which stays valid under the search; the assumption is that calibration flows resemble queued test flows. The test queue was scored once at every setting. Caps the calibration data cannot support close nothing.</p>
+      <p>Each setting is a cap on attacks wrongly closed per 1,000 closed. Its threshold is chosen on a calibration pool of the training split, kept apart before anything was trained, by fixed-sequence binomial tests at an approximate 5% level (flows of one connection are correlated). Every setting is reported, including the ones that close nothing. Caps the calibration data cannot support close nothing.</p>
       <div class="panel"><table class="data"><thead><tr><th>Cap</th><th>Supported on training data</th><th>Queue closed</th><th>Attacks closed</th><th>Per 1,000 closed (95% CI)</th><th>Queued attacks closed</th><th>Decisions per 100</th></tr></thead><tbody>${knobRows}</tbody></table></div>
       <h3>Finding the attacks sooner</h3>
       <p>Attacks found against queue items worked. The desk serves the queue least benign-looking first; its lead is at the top of the queue, and FlowSentry's order catches up near 90%.</p>

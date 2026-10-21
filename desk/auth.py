@@ -20,6 +20,8 @@ from dataclasses import dataclass
 from functools import lru_cache
 
 COOKIE = "desk_ws"
+HEADER = "x-desk-workspace"
+_TOKEN_OK = set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_")
 
 
 @dataclass(frozen=True)
@@ -110,7 +112,12 @@ def from_request(headers: dict, cookies: dict) -> tuple[Analyst | None, str | No
             return Analyst(workspace=f"clerk:{c['sub']}", kind="clerk", actor=c["sub"]), None
         if mode() == "clerk":
             raise AuthError("sign in first")
-    tok = cookies.get(COOKIE)
+    # The browser keeps a random id in localStorage and sends it as a header. That works inside
+    # the Hugging Face page, where the app is a cross-site iframe and cookies are not sent.
+    # The cookie is the fallback for clients that send no header.
+    tok = headers.get(HEADER)
+    if not (tok and 20 <= len(tok) <= 100 and set(tok) <= _TOKEN_OK):
+        tok = cookies.get(COOKIE)
     new = None
     if not tok or len(tok) < 20:
         tok = secrets.token_urlsafe(24)

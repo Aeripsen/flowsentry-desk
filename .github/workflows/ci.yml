@@ -59,9 +59,9 @@ jobs:
       - run: python -m playwright install --with-deps chromium
       - name: serve and click through the demo
         run: |
-          DESK_DB_PATH=/tmp/desk.sqlite3 python -m uvicorn desk.app:app --port 8000 &
+          DESK_DB_PATH=/tmp/desk.sqlite3 DESK_FRAME_ANCESTORS=http://localhost:8001 python -m uvicorn desk.app:app --port 8000 &
           for i in $(seq 1 30); do curl -fs localhost:8000/api/health && break; sleep 1; done
-          python scripts/ui_check.py --url http://127.0.0.1:8000 --out ui-shots
+          python scripts/ui_check.py --url http://127.0.0.1:8000 --out ui-shots --iframe-port 8001
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -3,7 +3,8 @@
 **A triage agent for the network flows FlowSentry refuses to call. Six read-only tools, a memo where every claim cites
 evidence the server issued, and a close that needs three independent yeses.**
 
-**Live demo:** https://huggingface.co/spaces/sepehrjafari81/flowsentry-desk (no sign-in, no key needed)
+**Live demo:** https://sepehrjafari81-flowsentry-desk.hf.space (no sign-in, no key needed; Space page:
+https://huggingface.co/spaces/sepehrjafari81/flowsentry-desk)
 
 Built for Build North 2026 (Georgian) on top of my open-source detector
 [FlowSentry](https://github.com/Aeripsen/flowsentry). What existed before Build Week and what is new is in
@@ -46,12 +47,13 @@ be far more benign, which makes the analyst's day worse, not better.
 
 ## Results
 
-Measured once on the 2,315-flow queue, with an oracle analyst that answers with the dataset's label. Everything below is
+Measured on the 2,315-flow queue, with an oracle analyst that answers with the dataset's label. The evaluation was
+re-run after each review fix (three runs in all, see below) and never tuned to the test numbers. Everything below is
 in [reports/eval.json](reports/eval.json) and is rebuilt by `make eval`. The engine is the deterministic policy; a
 model-driven run can only close a subset of what the policy closes, because a close needs the same server rules.
 
 **The close knob.** Each cap's threshold was chosen on a calibration pool of the training split; the test queue was
-scored once at every setting.
+scored at every setting, and every setting is reported.
 
 | Cap | Supported on training data | Queue closed | Attacks closed | Per 1,000 closed (95% CI) | Queued attacks closed | Decisions per 100 |
 |---|---|---|---|---|---|---|

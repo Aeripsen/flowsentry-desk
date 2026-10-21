@@ -66,6 +66,8 @@ def live_engine() -> tuple[str, str] | None:
         return None
 
 
+# extra origins allowed to frame the app (the CI iframe test sets one); space separated
+EXTRA_FRAME_ANCESTORS = "".join(" " + o for o in os.environ.get("DESK_FRAME_ANCESTORS", "").split())
 RUNS_PER_WORKSPACE_PER_DAY = int(os.environ.get("DESK_RUNS_PER_WORKSPACE", "25"))
 RUNS_PER_DAY = int(os.environ.get("DESK_RUNS_PER_DAY", "300"))
 
@@ -90,7 +92,8 @@ async def headers(request: Request, call_next):
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com; "
         f"frame-src{frames}; worker-src 'self' blob:; "
-        "frame-ancestors 'self' https://huggingface.co; base-uri 'none'; form-action 'self'")
+        f"frame-ancestors 'self' https://huggingface.co{EXTRA_FRAME_ANCESTORS}; base-uri 'none'; "
+        "form-action 'self'")
     resp.headers["X-Content-Type-Options"] = "nosniff"
     resp.headers["Referrer-Policy"] = "no-referrer"
     return resp

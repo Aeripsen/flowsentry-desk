@@ -89,3 +89,12 @@ def test_origin_check_fails_closed(keys, monkeypatch):
     no_azp = jwt.encode({"sub": "u", "exp": int(time.time()) + 60, "nbf": 0}, keys[0], algorithm="RS256")
     with pytest.raises(auth.AuthError):
         auth.verify_clerk_token(no_azp, key=keys[1])              # token without azp
+
+
+def test_workspace_header_works_without_cookies():
+    hdr = {"x-desk-workspace": "abcdefghijklmnopqrstuvwxyz012345"}
+    a1, c1 = auth.from_request(hdr, {})
+    a2, _ = auth.from_request(hdr, {})
+    assert a1.workspace == a2.workspace and c1 is None
+    bad, cookie = auth.from_request({"x-desk-workspace": "<script>"}, {})
+    assert cookie is not None and bad.workspace != a1.workspace

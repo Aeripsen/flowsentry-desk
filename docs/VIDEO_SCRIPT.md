@@ -17,7 +17,7 @@ Before recording: open the Audit log view, click **Reset my workspace**, go back
 | 0:50 | Set the **Close knob** to 100 per 1,000. Open `/#C1681`, press **R**: "Closed by the desk" | "Closing is a knob, like FlowSentry's. At the default the desk closed no attacks at all. Here I turn it all the way up and spot-check something it closed." |
 | 1:00 | In C1681 pick **UDP-OVH**, click **Save label**. The panel lists C1986 and C1967 as changed | "It's actually an OVH flood. I relabel it, and the desk stops auto-closing the two flows next to it." |
 | 1:12 | Click C1986, press **R**: "Needs you", memo names C1681 | "And both of those are real OVH floods the desk would have closed. My override can only make it more careful, never less. A close needs the agent, the rules and the citations to agree." |
-| 1:28 | **Results** view, the four figures, then the chart | "Measured once on the held-out queue. At the default it closes 5.4 percent of the queue and not one attack. In the desk's order I find half the attacks after 324 cases instead of 866. And every setting stayed under its cap." |
+| 1:28 | **Results** view, the four figures, then the chart | "Measured on the held-out queue. At the default it closes 5.4 percent of the queue and not one attack. In the desk's order I find half the attacks after 324 cases instead of 866. And every setting stayed under its cap." |
 | 1:48 | **Audit log** view, chain intact | "Every run and every label is in a hash-chained audit log." |
 | 1:53 | Back to Desk | "Bring your own detector: the desk needs a reject queue and a labelled history. FlowSentry Desk." |
 

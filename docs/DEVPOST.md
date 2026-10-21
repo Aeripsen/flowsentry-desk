@@ -143,6 +143,7 @@ queue, the feedback loop, the oracle-analyst evaluation, Clerk auth **[check: st
 ## Links
 
 - Code: https://github.com/Aeripsen/flowsentry-desk
-- Live demo: https://huggingface.co/spaces/sepehrjafari81/flowsentry-desk
+- Live demo: https://sepehrjafari81-flowsentry-desk.hf.space (the Space page:
+  https://huggingface.co/spaces/sepehrjafari81/flowsentry-desk)
 - Video: (your YouTube link)
 - FlowSentry: https://github.com/Aeripsen/flowsentry
