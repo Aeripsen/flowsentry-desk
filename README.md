@@ -3,6 +3,8 @@
 **A triage agent for the network flows FlowSentry refuses to call. Six read-only tools, a memo where every claim cites
 evidence the server issued, and a close that needs three independent yeses.**
 
+**Live demo:** https://huggingface.co/spaces/sepehrjafari81/flowsentry-desk (no sign-in, no key needed)
+
 Built for Build North 2026 (Georgian) on top of my open-source detector
 [FlowSentry](https://github.com/Aeripsen/flowsentry). What existed before Build Week and what is new is in
 [PRIOR_WORK.md](PRIOR_WORK.md).
