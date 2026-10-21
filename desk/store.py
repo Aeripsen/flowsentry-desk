@@ -45,7 +45,7 @@ class Bundle:
         return self.manifest["gate"]["knob"]
 
     def threshold_for(self, cap: float | None = None) -> float:
-        """Gate threshold for a close-knob cap; a cap training data cannot certify (or 0)
+        """Gate threshold for a close-knob cap; a cap the training data does not support (or 0)
         means the desk closes nothing."""
         if cap is None:
             cap = self.default_cap

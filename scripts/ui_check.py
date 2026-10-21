@@ -52,6 +52,11 @@ def main() -> int:
                 errors.append("citation chip did not light its evidence")
             pg.screenshot(path=out / f"02_escalated_case_{scheme}.png", full_page=True)
             if scheme == "light":
+                # the desk's order puts attacks first; arrival order has cases that need a person
+                pg.select_option("#order", "arrival")
+                pg.wait_for_timeout(500)
+                pg.click("#batch")
+                pg.wait_for_function("!document.querySelector('#batch').disabled")
                 pg.click("[data-tab=needs_you]")
                 pg.wait_for_selector("[data-tab=needs_you].on")
                 pg.wait_for_selector(".rows li button .pill.HUMAN")

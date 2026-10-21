@@ -117,3 +117,30 @@ def test_reset_clears_the_workspace(client):
     client.post("/api/reset")
     assert client.get("/api/me").json()["labels"] == 0
     assert time.time() > 0
+
+
+def test_reopen_sends_a_closed_case_back_to_a_person(client, b):
+    d = core.decide(b, np.arange(b.n))
+    closable = b.case_id(int(np.nonzero(d["verdict"] == "close_benign")[0][0]))
+    assert client.post(f"/api/case/{closable}/run", json={"engine": "policy"}).json()["outcome"] == "AUTO_CLOSED"
+    client.post(f"/api/case/{closable}/decision", json={"action": "approve"})
+    client.post(f"/api/case/{closable}/decision", json={"action": "reopen"})
+    case = client.get(f"/api/case/{closable}").json()
+    assert case["label"] is None and case["run"]["outcome"] == "HUMAN"
+
+
+def test_quota_survives_a_reset():
+    from desk.db import DB
+
+    db = DB(":memory:")
+    assert db.reserve_model_run("w", "anthropic", 2, 100)
+    assert db.reserve_model_run("w", "anthropic", 2, 100)
+    db.reset("w", "analyst")
+    assert not db.reserve_model_run("w", "anthropic", 2, 100)
+
+
+def test_queue_is_served_in_the_desks_order(client, b):
+    rows = client.get("/api/queue?limit=5").json()["rows"]
+    gate = b.a["q_gate_score"]
+    scores = [float(gate[b.pos(r["case_id"])]) for r in rows]
+    assert scores == sorted(scores)

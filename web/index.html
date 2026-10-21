@@ -41,6 +41,13 @@
 
 <main id="view-desk" class="desk">
   <aside class="list" aria-label="Queue">
+    <div class="order">
+      <label for="order">Order</label>
+      <select id="order">
+        <option value="desk">Least benign-looking first</option>
+        <option value="arrival">Arrival</option>
+      </select>
+    </div>
     <div class="tabs" role="tablist" id="tabs"></div>
     <ol id="rows" class="rows"></ol>
     <button class="more" id="more" hidden>Show more</button>

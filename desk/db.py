@@ -41,6 +41,11 @@ CREATE TABLE IF NOT EXISTS audit (
   prev_hash TEXT NOT NULL, hash TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS audit_ws ON audit (workspace, seq);
+CREATE TABLE IF NOT EXISTS usage (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, workspace TEXT NOT NULL, engine TEXT NOT NULL,
+  day TEXT NOT NULL, at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS usage_day ON usage (day, workspace);
 """
 
 GENESIS = "0" * 64
@@ -121,7 +126,7 @@ class DB:
 
     # ------------------------------------------------------------ runs
 
-    def add_run(self, ws: str, run: dict, actor: str) -> int:
+    def add_run(self, ws: str, run: dict, actor: str, action: str = "agent_run") -> int:
         with self.tx() as c:
             cur = c.execute(
                 "INSERT INTO runs (workspace, case_id, engine, model, outcome, body, created_at)"
@@ -130,7 +135,7 @@ class DB:
                  json.dumps(run), now()))
             rid = int(cur.lastrowid)
             fin = run.get("final") or {}
-            self._audit(c, ws, actor, "agent_run", run["case_id"], {
+            self._audit(c, ws, actor, action, run["case_id"], {
                 "run_id": rid, "engine": run["engine"], "model": run["model"],
                 "verdict": fin.get("verdict"), "family": fin.get("family"),
                 "outcome": run["outcome"], "citations_ok": run["citations_ok"],
@@ -152,6 +157,20 @@ class DB:
         body = json.loads(r["body"])
         body["run_id"] = r["run_id"]
         return body
+
+    def reserve_model_run(self, ws: str, engine: str, per_workspace: int, per_day: int) -> bool:
+        """Count a live model run BEFORE it happens, atomically. Usage rows are never deleted,
+        so a workspace reset cannot hand back quota."""
+        day = time.strftime("%Y-%m-%d")
+        with self.tx() as c:
+            mine = c.execute("SELECT COUNT(*) n FROM usage WHERE day=? AND workspace=?",
+                             (day, ws)).fetchone()["n"]
+            total = c.execute("SELECT COUNT(*) n FROM usage WHERE day=?", (day,)).fetchone()["n"]
+            if mine >= per_workspace or total >= per_day:
+                return False
+            c.execute("INSERT INTO usage (workspace, engine, day, at) VALUES (?,?,?,?)",
+                      (ws, engine, day, now()))
+            return True
 
     def runs_today(self, ws: str | None, engine_prefix: str) -> int:
         day = time.strftime("%Y-%m-%d")

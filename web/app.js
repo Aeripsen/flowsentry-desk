@@ -7,7 +7,7 @@
   const fmt = (x, d = 3) => (typeof x === "number" ? (Math.abs(x) >= 1000 ? x.toLocaleString("en-CA", { maximumFractionDigits: 1 }) : String(+x.toPrecision(d))) : esc(x));
   const pct = (x, d = 1) => (x == null ? "n/a" : (100 * x).toFixed(d) + "%");
 
-  const S = { cfg: null, tab: "all", rows: [], total: 0, offset: 0, sel: null, current: null, clerk: null, view: "desk" };
+  const S = { cfg: null, order: "desk", tab: "all", rows: [], total: 0, offset: 0, sel: null, current: null, clerk: null, view: "desk" };
   const OUT = { AUTO_CLOSED: "Closed by the desk", ESCALATED: "Escalated", HUMAN: "Needs you" };
   const TABS = [["all", "All"], ["needs_you", "Needs you"], ["escalated", "Escalated"], ["closed", "Closed"], ["todo", "Not read"], ["done", "Labelled"]];
 
@@ -87,7 +87,7 @@
   }
   async function loadQueue(append = false) {
     const off = append ? S.rows.length : 0;
-    const q = await api(`/api/queue?status=${S.tab}&offset=${off}&limit=60`);
+    const q = await api(`/api/queue?status=${S.tab}&order=${S.order}&offset=${off}&limit=60`);
     S.rows = append ? S.rows.concat(q.rows) : q.rows;
     S.total = q.total;
     renderTabs(q.counts);
@@ -125,7 +125,7 @@
       if (run.error) body += `<p class="meta">Run error: ${esc(run.error)}. The case went to a person; nothing was closed.</p>`;
       if (fin.ticket) body += `<div class="ticket"><h4>Ticket draft for on-call</h4>${memoHtml(fin.ticket, ok)}</div>`;
       const eng = run.engine === "policy" ? "deterministic policy (no model)" : `${esc(run.engine)} ${esc(run.model)}`;
-      body += `<p class="meta">${run.recorded ? "Recorded run" : "Run"} by ${eng}. ${run.steps.length} steps, ${fmt(run.seconds)} s${run.tokens_in ? `, ${run.tokens_in} tokens in, ${run.tokens_out} out` : ""}. Citations ${run.citations_ok ? "checked" : "failed the check"}.</p>`;
+      body += `<p class="meta">${run.recorded ? "Recorded run" : "Run"} by ${eng}. ${run.steps.length} steps, ${fmt(run.seconds)} s${run.tokens_in ? `, ${run.tokens_in} tokens in, ${run.tokens_out} out` : ""}. ${run.citations_ok ? "Every cited id was issued in this run" : "The citation check failed"}.</p>`;
       const pre = fin.verdict === "escalate" ? fin.family : "benign";
       const opts = cls.map((k) => `<option value="${k}"${k === pre ? " selected" : ""}>${k}</option>`).join("");
       if (lab) {
@@ -247,20 +247,20 @@
       <h2>What the desk does to the queue</h2>
       <p class="lede">Measured once on FlowSentry's 2,315-flow reject queue from the held-out split, with an oracle analyst who answers with the dataset's label. Every number below is in <code>reports/eval.json</code>.</p>
       <div class="figs">
-        <div class="fig"><div class="n">${def.attacks_wrongly_closed}</div><div class="l">attacks closed at the default setting (${def.cap_per_1000_on_training} per 1,000), which closes ${def.auto_closed} flows, ${pct(def.share_of_queue_closed)} of the queue</div></div>
-        <div class="fig"><div class="n">${pct(k30.share_of_queue_closed)}</div><div class="l">of the queue closed at ${k30.cap_per_1000_on_training} per 1,000, with ${k30.attacks_wrongly_closed} attacks among them (${k30.attacks_wrongly_closed_per_1000_closed} per 1,000)</div></div>
+        <div class="fig"><div class="n">${pct(def.share_of_queue_closed)}</div><div class="l">of the queue closed at the default setting (${def.cap_per_1000_on_training} per 1,000): ${def.auto_closed} flows, ${def.attacks_wrongly_closed} of them ${def.attacks_wrongly_closed === 1 ? "an attack" : "attacks"}</div></div>
+        <div class="fig"><div class="n">${pct(def.share_of_queued_attacks_closed)}</div><div class="l">of the ${def.queued_attacks} queued attacks closed at the default; the rest are escalated or sent to you</div></div>
         <div class="fig"><div class="n">${o.desk_order.items_to_find_50pct_of_attacks}</div><div class="l">items worked to find half the attacks in the desk's order, against ${o.flowsentry_order.items_to_find_50pct_of_attacks} in FlowSentry's</div></div>
         <div class="fig"><div class="n">${def.escalated_true_attack} of ${def.escalated}</div><div class="l">escalations are attacks; ${def.escalated_family_correct} name the right family</div></div>
       </div>
       <p class="caveat">${esc(e.caveat.charAt(0).toUpperCase() + e.caveat.slice(1))}</p>
       <h3>The close knob</h3>
-      <p>Each setting is a cap on attacks wrongly closed per 1,000 closed, certified as a 95% upper bound on training data only. The test queue was scored once at every setting. The strictest caps cannot be certified on this sample, so at those settings the desk closes nothing.</p>
-      <div class="panel"><table class="data"><thead><tr><th>Cap (training)</th><th>Certified</th><th>Queue closed</th><th>Attacks closed</th><th>Per 1,000 closed (95% CI)</th><th>Queued attacks closed</th><th>Decisions per 100</th></tr></thead><tbody>${knobRows}</tbody></table></div>
+      <p>Each setting is a cap on attacks wrongly closed per 1,000 closed. Its threshold is chosen on a calibration part of the training split by fixed-sequence binomial tests at the 5% level, which stays valid under the search; the assumption is that calibration flows resemble queued test flows. The test queue was scored once at every setting. Caps the calibration data cannot support close nothing.</p>
+      <div class="panel"><table class="data"><thead><tr><th>Cap</th><th>Supported on training data</th><th>Queue closed</th><th>Attacks closed</th><th>Per 1,000 closed (95% CI)</th><th>Queued attacks closed</th><th>Decisions per 100</th></tr></thead><tbody>${knobRows}</tbody></table></div>
       <h3>Finding the attacks sooner</h3>
-      <p>Attacks found against queue items worked. The desk's order puts the least benign-looking flows first.</p>
+      <p>Attacks found against queue items worked. The desk serves the queue least benign-looking first; its lead is at the top of the queue, and FlowSentry's order catches up near 90%.</p>
       <div class="panel">${chart}<div class="legend"><span><i style="background:var(--closed)"></i>desk order</span><span><i style="background:var(--human)"></i>FlowSentry order (lowest P(benign) first)</span><span><i style="background:var(--muted)"></i>random order</span></div></div>
       <h3>Learning from analyst labels</h3>
-      <p>Rare-family flows the desk escalates under the right family name, on the flows nobody labelled yet, as labels accumulate (20 random label orders). This effect is small on this sample; the larger effect of labels is that a labelled attack nearby blocks closes.</p>
+      <p>Rare-family flows the desk escalates under the right family name, on the flows nobody labelled yet, as labels accumulate (20 random label orders). This effect is small on this sample. What labels do reliably is block closes near a labelled attack.</p>
       <div class="panel"><table class="data"><thead><tr><th>Analyst labels</th><th>Rare family named correctly</th><th>Rare flows not closed</th><th>Attacks wrongly closed</th></tr></thead><tbody>${learn}</tbody></table></div>
       <h3>If the queue were more benign</h3>
       <p>Attacks per 1,000 closed if the queue were more benign. A reweighting of the measured close rates, not a measurement: this sample caps benign traffic.</p>
@@ -333,7 +333,7 @@
         break;
       case "batch": {
         t.disabled = true; t.textContent = "Pre-reading...";
-        try { const r = await api("/api/batch", { method: "POST", body: JSON.stringify({ n: 25 }) }); toast(`Pre-read ${r.ran} cases.`); await loadQueue(); }
+        try { const r = await api("/api/batch", { method: "POST", body: JSON.stringify({ n: 25, order: S.order }) }); toast(`Pre-read ${r.ran} cases.`); await loadQueue(); }
         catch (e) { toast(esc(e.message)); }
         t.disabled = false; t.textContent = "Pre-read the next 25";
         break;
@@ -341,6 +341,7 @@
       default:
     }
   });
+  $("#order").addEventListener("change", async () => { S.order = $("#order").value; await loadQueue(); });
   $("#cap").addEventListener("change", async () => {
     const v = $("#cap").value;
     const cap = Number(v) === S.cfg.default_cap ? null : Number(v);

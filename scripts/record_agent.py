@@ -57,6 +57,7 @@ def main() -> None:
             r = agent.model_run(b, b.pos(cid), labels, eng, cap=cap)
             d = r.to_dict()
             d["recorded"] = True
+            d["bundle_sha256"] = b.manifest["bundle_sha256"]
             fh.write(json.dumps(d) + "\n")
             fh.flush()
             tin += r.tokens_in

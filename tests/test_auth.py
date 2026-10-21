@@ -79,3 +79,13 @@ def test_optional_mode_allows_anonymous_and_verifies_tokens(monkeypatch):
     assert a.kind == "anon"
     with pytest.raises(auth.AuthError):
         auth.from_request({"authorization": "Bearer not.a.token"}, {})
+
+
+def test_origin_check_fails_closed(keys, monkeypatch):
+    monkeypatch.delenv("DESK_ALLOWED_ORIGINS", raising=False)
+    with pytest.raises(auth.AuthError):
+        auth.verify_clerk_token(tok(keys[0]), key=keys[1])        # no allowlist configured
+    monkeypatch.setenv("DESK_ALLOWED_ORIGINS", "https://desk.example")
+    no_azp = jwt.encode({"sub": "u", "exp": int(time.time()) + 60, "nbf": 0}, keys[0], algorithm="RS256")
+    with pytest.raises(auth.AuthError):
+        auth.verify_clerk_token(no_azp, key=keys[1])              # token without azp

@@ -42,11 +42,11 @@ WEB_DIR = ROOT / "web"
 # 0.99 is FlowSentry's headline threshold (2,315 of 6,570 held-out flows).
 REJECT_THRESHOLD = 0.99
 
-# The close knob. For each cap, the gate threshold is the loosest one whose 95% Wilson upper
-# bound on attacks wrongly closed, per 1,000 closed, is at most the cap on TRAINING data
-# (out of fold). The default is the strictest cap the training data can certify. History
-# (build log): 10 was fixed first and could not be met; 20 neither; the knob replaced the
-# single cap before the test queue was scored.
+# The close knob, in attacks wrongly closed per 1,000 closed. For each cap, the gate threshold
+# is chosen on the calibration part of the TRAINING split by fixed-sequence binomial tests at
+# the 5% level (desk/build.py ltt_threshold). The default is the strictest cap the training
+# data supports. History is in the build log: a single cap of 10 came first and could not be
+# met; the Wilson-bound search that followed was replaced after review.
 GATE_CAPS_PER_1000 = (10.0, 20.0, 30.0, 50.0, 100.0)
 
 # Precedents: how many labelled neighbours each case gets.

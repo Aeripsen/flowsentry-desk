@@ -174,8 +174,16 @@ def me(a: auth.Analyst = Depends(analyst)):
             "close_cap": d.close_cap(a.workspace)}
 
 
+def queue_order(b: Bundle, order: str) -> np.ndarray:
+    """desk: least benign-looking first (lowest close-gate score), the order the evaluation's
+    'finding attacks sooner' result measures. arrival: the fixed shuffled order of case ids."""
+    if order == "arrival":
+        return b.order
+    return np.argsort(b.a["q_gate_score"], kind="stable")
+
+
 @app.get("/api/queue")
-def queue(status: str = "all", offset: int = 0, limit: int = 60,
+def queue(status: str = "all", offset: int = 0, limit: int = 60, order: str = "desk",
           a: auth.Analyst = Depends(analyst)):
     b = load()
     d = get_db()
@@ -183,8 +191,8 @@ def queue(status: str = "all", offset: int = 0, limit: int = 60,
     labels = {c: {"label": y, "source": "?"} for c, y in d.labels(a.workspace)}
     rows, counts = [], {"all": 0, "todo": 0, "needs_you": 0, "escalated": 0, "closed": 0,
                         "done": 0}
-    for k in range(b.n):
-        pos = int(b.order[k])
+    for pos in queue_order(b, order):
+        pos = int(pos)
         cid = b.case_id(pos)
         lab = d.label_of(a.workspace, cid) if cid in labels else None
         r = case_row(b, pos, runs.get(cid), lab)
@@ -225,16 +233,20 @@ def _do_run(b: Bundle, pos: int, a: auth.Analyst, engine: str) -> dict:
     if engine == "model" and eng is None:
         raise HTTPException(409, "no live model is configured on this server")
     use_model = eng is not None and engine in ("auto", "model")
-    if use_model and (d.runs_today(a.workspace, eng[0]) >= RUNS_PER_WORKSPACE_PER_DAY
-                      or d.runs_today(None, eng[0]) >= RUNS_PER_DAY):
+    if use_model and not d.reserve_model_run(a.workspace, eng[0], RUNS_PER_WORKSPACE_PER_DAY,
+                                             RUNS_PER_DAY):
         if engine == "model":
             raise HTTPException(429, "today's live model runs are used up; the policy still works")
         use_model = False
     rec = recorded_runs().get((cid, labels.fingerprint(), cap))
+    replay = None
+    if not use_model and engine in ("auto", "recorded_or_policy") and rec:
+        # a recording is re-checked against today's bundle and rules before it is served
+        replay = agent.revalidate(b, pos, rec, labels, cap)
     if use_model:
         run = agent.model_run(b, pos, labels, eng, cap=cap).to_dict()
-    elif engine in ("auto", "recorded_or_policy") and rec:
-        run = dict(rec, recorded=True)
+    elif replay is not None:
+        run = replay
     else:
         run = agent.policy_run(b, pos, labels, cap=cap).to_dict()
     run["run_id"] = d.add_run(a.workspace, run, a.actor)
@@ -253,6 +265,7 @@ def run_case(case_id: str, req: RunReq, a: auth.Analyst = Depends(analyst)):
 
 class BatchReq(BaseModel):
     n: int = Field(25, ge=1, le=200)
+    order: str = Field("desk", pattern="^(desk|arrival)$")
 
 
 @app.post("/api/batch")
@@ -263,10 +276,10 @@ def batch(req: BatchReq, a: auth.Analyst = Depends(analyst)):
     d = get_db()
     done = set(d.latest_runs(a.workspace)) | {c for c, _ in d.labels(a.workspace)}
     out = []
-    for k in range(b.n):
+    for pos in queue_order(b, req.order):
         if len(out) >= req.n:
             break
-        pos = int(b.order[k])
+        pos = int(pos)
         if b.case_id(pos) in done:
             continue
         r = _do_run(b, pos, a, "recorded_or_policy")
@@ -288,10 +301,15 @@ def decision(case_id: str, req: DecisionReq, a: auth.Analyst = Depends(analyst))
         raise HTTPException(404, "no such case") from e
     cid = b.case_id(pos)
     d = get_db()
+    run = d.latest_run(a.workspace, cid)
     if req.action == "reopen":
         d.clear_label(a.workspace, cid, a.actor)
+        if run:
+            body = {k: v for k, v in run.items() if k != "run_id"}
+            body.update(engine="analyst", model="reopen", outcome="HUMAN", recorded=False,
+                        outcome_reason="reopened by the analyst; the desk's earlier memo is kept")
+            d.add_run(a.workspace, body, a.actor, action="reopened")
         return {"ok": True, "changed": []}
-    run = d.latest_run(a.workspace, cid)
     before = ws_labels(b, a)
     if req.action == "approve":
         if not run or run["outcome"] not in ("AUTO_CLOSED", "ESCALATED"):

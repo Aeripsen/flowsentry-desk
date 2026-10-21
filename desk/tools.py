@@ -209,11 +209,13 @@ def propose(ctx: CaseContext, args: dict) -> dict:
     if verdict not in VERDICTS:
         errors.append(f"verdict must be one of {VERDICTS}")
     inline = CITE_RE.findall(memo)
+    ticket = str(args.get("ticket", "")).strip()
+    in_ticket = CITE_RE.findall(ticket)
     if not memo:
         errors.append("memo is empty")
-    if not cited and not inline:
-        errors.append("cite at least one tool result id, e.g. [R2]")
-    for rid in sorted(set(cited) | set(inline)):
+    if not inline:
+        errors.append("cite tool result ids inline in the memo, e.g. [R2]")
+    for rid in sorted(set(cited) | set(inline) | set(in_ticket)):
         if not ctx.ledger.has(rid):
             errors.append(f"{rid} was not issued in this run; cite only ids you received")
     if verdict == "close_benign" and "precedents" not in ctx.ledger.tools_used():
@@ -227,8 +229,8 @@ def propose(ctx: CaseContext, args: dict) -> dict:
         "verdict": verdict,
         "family": family if verdict == "escalate" else "",
         "memo": memo,
-        "citations": sorted(set(cited) | set(inline), key=lambda r: int(r[1:])),
-        "ticket": str(args.get("ticket", "")).strip() if verdict == "escalate" else "",
+        "citations": sorted(set(cited) | set(inline) | set(in_ticket), key=lambda r: int(r[1:])),
+        "ticket": ticket if verdict == "escalate" else "",
     }
     return {"accepted": True, "verdict": verdict, "family": ctx.final["family"]}
 

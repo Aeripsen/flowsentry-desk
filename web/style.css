@@ -99,6 +99,8 @@ kbd {
   min-height: 0;
 }
 .list { border-inline-end: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; min-height: 0; }
+.order { display: flex; align-items: center; gap: 8px; padding: 10px 10px 0; font-size: 13px; color: var(--muted); }
+.order select { flex: 1; padding: 4px 6px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--panel); }
 .tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 10px; border-bottom: 1px solid var(--line); }
 .tabs button {
   border: 1px solid transparent; background: transparent; border-radius: 999px; padding: 3px 10px;

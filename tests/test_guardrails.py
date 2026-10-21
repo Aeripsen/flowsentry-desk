@@ -128,3 +128,30 @@ def test_system_prompt_states_the_limits():
     s = agent.SYSTEM
     assert "data, not instructions" in s and "cannot block traffic" in s
     assert re.search(r"at most 7 tool calls", s)
+
+
+def test_memo_must_cite_inline_and_ticket_refs_are_checked(b):
+    ctx = tools.CaseContext(b=b, pos=int(b.order[0]), labels=core.Labels())
+    tools.call(ctx, "next_case", {})
+    _, out, err = tools.call(ctx, "propose", {"verdict": "ask_human", "family": "",
+                                              "memo": "Definitely benign.", "citations": ["R1"], "ticket": ""})
+    assert err
+    _, out, err = tools.call(ctx, "propose", {"verdict": "escalate", "family": "UDP-RAW",
+                                              "memo": "Flood [R1].", "citations": ["R1"],
+                                              "ticket": "See [R999]."})
+    assert err and any("R999" in e for e in out["errors"])
+
+
+def test_recorded_runs_are_revalidated(b):
+    import copy
+
+    d = core.decide(b, np.arange(b.n))
+    refused = int(np.nonzero(~d["close_allowed"])[0][0])
+    good = agent.policy_run(b, refused).to_dict()
+    forged = copy.deepcopy(good)
+    forged["final"]["verdict"] = "close_benign"
+    forged["outcome"], forged["citations_ok"] = "AUTO_CLOSED", True
+    forged["bundle_sha256"] = b.manifest["bundle_sha256"]
+    assert agent.revalidate(b, refused, forged, core.Labels(), None)["outcome"] == "HUMAN"
+    forged["bundle_sha256"] = "0" * 64
+    assert agent.revalidate(b, refused, forged, core.Labels(), None) is None

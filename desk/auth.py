@@ -88,9 +88,10 @@ def verify_clerk_token(token: str, key=None) -> dict:
                             leeway=5)
     except Exception as e:  # any failure is a 401, with no detail leaked to the client
         raise AuthError("invalid session token") from e
-    azp = claims.get("azp")
     origins = allowed_origins()
-    if azp and origins and azp not in origins:
+    if not origins:
+        raise AuthError("sign-in is misconfigured: DESK_ALLOWED_ORIGINS is empty")
+    if claims.get("azp") not in origins:
         raise AuthError("token issued for another origin")
     if claims.get("sts") == "pending":
         raise AuthError("session pending")

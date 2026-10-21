@@ -118,6 +118,35 @@ class Run:
         return asdict(self)
 
 
+def citations_ok(final: dict, issued: set[str]) -> bool:
+    """Reference check: the memo cites at least one id inline, and every id it, the ticket
+    or the citation list mentions was issued in this run. It checks references, not whether
+    each sentence is supported."""
+    memo_ids = tools.CITE_RE.findall(final.get("memo", ""))
+    all_ids = set(memo_ids) | set(tools.CITE_RE.findall(final.get("ticket", ""))) | set(
+        final.get("citations", []))
+    return bool(memo_ids) and all_ids <= issued
+
+
+def revalidate(b: Bundle, pos: int, rec: dict, labels: core.Labels, cap: float | None) -> dict | None:
+    """A recorded run, re-checked against the current bundle and rules. None if the
+    recording was made on another bundle or is not for this case."""
+    if rec.get("bundle_sha256") != b.manifest["bundle_sha256"] or rec.get("case_id") != b.case_id(pos):
+        return None
+    run = dict(rec, recorded=True)
+    issued = {s["result_id"] for s in run.get("steps", []) if s.get("result_id")}
+    fin = run.get("final")
+    if not fin:
+        run["citations_ok"] = False
+        run["outcome"], run["outcome_reason"] = "HUMAN", "the recorded run did not finish with a proposal"
+        return run
+    d = core.one(core.decide(b, np.array([pos]), labels, cap))
+    run["citations_ok"] = citations_ok(fin, issued)
+    run["outcome"], run["outcome_reason"] = core.outcome(fin.get("verdict"), run["citations_ok"],
+                                                         bool(d["close_allowed"]))
+    return run
+
+
 def _settle(run: Run, ctx: tools.CaseContext) -> Run:
     d = ctx.decision()
     if ctx.final is None:
@@ -127,8 +156,7 @@ def _settle(run: Run, ctx: tools.CaseContext) -> Run:
             else "the agent failed; a person takes the case")
     else:
         run.final = ctx.final
-        run.citations_ok = all(ctx.ledger.has(r) for r in ctx.final["citations"]) and bool(
-            ctx.final["citations"])
+        run.citations_ok = citations_ok(ctx.final, set(ctx.ledger.results))
         run.outcome, run.outcome_reason = core.outcome(
             ctx.final["verdict"], run.citations_ok, bool(d["close_allowed"]))
     run.recorded_at = time.strftime("%Y-%m-%d %H:%M:%S %z")

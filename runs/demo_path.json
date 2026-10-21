@@ -1,40 +1,12 @@
 {
-  "what": "The video's override moment, with the close knob at 30 per 1,000 (the default, 20, closes no attack on this queue). C0072 is one of the 4 attacks the desk wrongly closes at 30: a UDP-bypass-v1 flood. An analyst spot-checking closed cases relabels it; the nearby-attack rule then stops the desk from auto-closing three look-alike flows, which go to the analyst instead. Those three are benign in the dataset, so the cost is three extra decisions, not three caught attacks. scripts/record_agent.py --demo-path records model runs for exactly these states.",
+  "what": "The video's override moments, chosen after the evaluation as illustrations, not measurements. Main take, close knob at 30 per 1,000: the desk closes C1099, which is a UDP-OVH flood. The analyst relabels it, and the nearby-attack rule stops the desk from auto-closing C1127 (a real UDP-HULK flood it would otherwise have closed) and C1022 (benign). Backup take, default knob: the desk's one wrong close is C0072 (UDP-bypass-v1); relabelling it sends C0896, C1340 and C1353 (all benign) to the analyst. scripts/record_agent.py --demo-path records model runs for exactly these states.",
   "steps": [
-    {
-      "case_id": "C0072",
-      "labels": [],
-      "cap": 30.0
-    },
-    {
-      "case_id": "C0896",
-      "labels": [
-        [
-          "C0072",
-          "UDP-bypass-v1"
-        ]
-      ],
-      "cap": 30.0
-    },
-    {
-      "case_id": "C1340",
-      "labels": [
-        [
-          "C0072",
-          "UDP-bypass-v1"
-        ]
-      ],
-      "cap": 30.0
-    },
-    {
-      "case_id": "C1353",
-      "labels": [
-        [
-          "C0072",
-          "UDP-bypass-v1"
-        ]
-      ],
-      "cap": 30.0
-    }
+    {"case_id": "C1099", "labels": [], "cap": 30.0},
+    {"case_id": "C1127", "labels": [["C1099", "UDP-OVH"]], "cap": 30.0},
+    {"case_id": "C1022", "labels": [["C1099", "UDP-OVH"]], "cap": 30.0},
+    {"case_id": "C0072", "labels": [], "cap": null},
+    {"case_id": "C0896", "labels": [["C0072", "UDP-bypass-v1"]], "cap": null},
+    {"case_id": "C1340", "labels": [["C0072", "UDP-bypass-v1"]], "cap": null},
+    {"case_id": "C1353", "labels": [["C0072", "UDP-bypass-v1"]], "cap": null}
   ]
 }

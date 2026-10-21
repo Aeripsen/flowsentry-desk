@@ -245,6 +245,47 @@ def pick_threshold(scores: np.ndarray, is_attack: np.ndarray, cap_per_1000: floa
     return best
 
 
+GATE_CAL_SHARE = 0.4
+GATE_ALPHA = 0.05
+
+
+def clopper_pearson_upper(k: int, n: int, alpha: float = 0.05) -> float:
+    """One-sided exact upper bound on a binomial rate."""
+    from scipy.stats import beta
+
+    if n == 0:
+        return 1.0
+    if k >= n:
+        return 1.0
+    return float(beta.ppf(1 - alpha, k + 1, n - k))
+
+
+def ltt_threshold(scores: np.ndarray, is_attack: np.ndarray, cap: float, alpha: float = 0.05):
+    """Loosest threshold that fixed-sequence testing supports (Learn then Test).
+
+    Thresholds are the distinct calibration scores, tested from strictest to loosest. The
+    sequence starts at the first threshold that closes enough flows for a test with zero
+    attacks to reject at all (a label-free rule), and stops at the first threshold whose
+    exact binomial test of H0 'attack share among closed >= cap' does not reject at alpha.
+    Every threshold before the stop is then valid simultaneously at level alpha, so picking
+    the loosest of them keeps the guarantee."""
+    from scipy.stats import binom
+
+    n_min = int(np.ceil(np.log(alpha) / np.log(1 - cap)))
+    best = None
+    for t in np.unique(scores)[::-1]:
+        closed = scores >= t
+        n = int(closed.sum())
+        if n < n_min:
+            continue
+        k = int(is_attack[closed].sum())
+        p = float(binom.cdf(k, n, cap))
+        if p > alpha:
+            break
+        best = {"threshold": float(t), "n": n, "k": k, "p": p}
+    return best
+
+
 def make_gate_model():
     from sklearn.ensemble import HistGradientBoostingClassifier
 
@@ -289,11 +330,11 @@ def build_gate(X, y, groups, tr, classes, med, scale):
     gtr = groups[tr]
     ytr = y[tr]
     n = len(tr)
-    cache = S.BUILD_DIR / "gate_oof_v3.npz"
+    cache = S.BUILD_DIR / "gate_oof_v3.npz"  # FlowSentry folds only
     if cache.exists():
         z = np.load(cache)
         oof_conf, oof_proba, feats = z["conf"], z["proba"], z["feats"]
-        log("gate: reusing cached out-of-fold FlowSentry from build/gate_oof_v2.npz")
+        log(f"gate: reusing cached out-of-fold FlowSentry from build/{cache.name}")
     else:
         oof_conf = np.zeros(n)
         oof_proba = np.zeros((n, len(classes)))
@@ -335,31 +376,45 @@ def build_gate(X, y, groups, tr, classes, med, scale):
         f"{int(hard.sum())}, benign share {target[hard].mean():.3f}")
     M = gate_matrix(Ztr[hard], feats[hard], oof_proba[hard])
     th, gh = target[hard], gtr[hard]
-    oof_scores = np.zeros(len(th))
-    models = []
+    from sklearn.model_selection import GroupShuffleSplit
     from threadpoolctl import threadpool_limits
 
+    # fit part and calibration part, split by connection; the calibration part is never
+    # seen by the gate models and is scored by the exact ensemble that is deployed
+    fit_i, cal_i = next(GroupShuffleSplit(n_splits=1, test_size=GATE_CAL_SHARE,
+                                          random_state=0).split(M, groups=gh))
+    Mf, tf, gf = M[fit_i], th[fit_i], gh[fit_i]
+    oof_fit = np.zeros(len(tf))
+    models = []
     # one thread: histogram sums in a fixed order, so the gate is the same on every machine
     with threadpool_limits(1):
-        for a, b in GroupKFold(n_splits=5).split(M, groups=gh):
-            mdl = make_gate_model().fit(M[a], th[a])
-            oof_scores[b] = mdl.predict_proba(M[b])[:, 1]
+        for a, b in GroupKFold(n_splits=5).split(Mf, groups=gf):
+            mdl = make_gate_model().fit(Mf[a], tf[a])
+            oof_fit[b] = mdl.predict_proba(Mf[b])[:, 1]
             models.append(mdl)
-    auc = float(roc_auc_score(th, oof_scores))
-    log(f"gate out-of-fold AUC (benign vs attack, training queue): {auc:.4f}")
-    n_att = int((th == 0).sum())
+    gate = FoldEnsemble(models)
+    cal_scores = gate.score(M[cal_i])
+    tc = th[cal_i]
+    auc_fit = float(roc_auc_score(tf, oof_fit))
+    auc_cal = float(roc_auc_score(tc, cal_scores))
+    log(f"gate: fit part {len(fit_i)} flows (out-of-fold AUC {auc_fit:.4f}), calibration part "
+        f"{len(cal_i)} flows, {int((tc == 0).sum())} attacks (AUC of the deployed ensemble {auc_cal:.4f})")
+    n_att = int((tc == 0).sum())
     knob = []
     for cap in S.GATE_CAPS_PER_1000:
-        c = pick_threshold(oof_scores, th == 0, cap)
+        c = ltt_threshold(cal_scores, tc == 0, cap / 1000.0, GATE_ALPHA)
         row = {"cap_per_1000": cap, "met_on_training": c is not None,
-               "threshold": None if c is None else c[0]}
+               "threshold": None if c is None else c["threshold"]}
         if c is not None:
-            row.update({"training_closed": c[1], "training_attacks_closed": c[2],
-                        "training_share_closed": round(c[1] / len(th), 4),
-                        "training_share_of_attacks_closed": round(c[2] / n_att, 4)})
+            row.update({"training_closed": c["n"], "training_attacks_closed": c["k"],
+                        "training_share_closed": round(c["n"] / len(tc), 4),
+                        "training_share_of_attacks_closed": round(c["k"] / max(n_att, 1), 4),
+                        "p_value": float(f"{c['p']:.3g}"),
+                        "upper_95_per_1000": round(1000 * clopper_pearson_upper(c["k"], c["n"]), 2)})
         knob.append(row)
-        log(f"gate cap {cap} per 1,000: " + ("not met on training data" if c is None else
-            f"threshold {c[0]:.5f} closes {c[1]} of {len(th)}, {c[2]} attacks"))
+        log(f"gate cap {cap} per 1,000: " + ("not met on the calibration part" if c is None else
+            f"threshold {c['threshold']:.5f} closes {c['n']} of {len(tc)}, {c['k']} attacks, "
+            f"p = {c['p']:.3g}"))
     met = [r for r in knob if r["met_on_training"]]
     if met:
         cap, tau = met[0]["cap_per_1000"], met[0]["threshold"]
@@ -367,14 +422,14 @@ def build_gate(X, y, groups, tr, classes, med, scale):
     else:
         log("gate: no cap met; the desk will close nothing")
         cap, tau, n_closed, k_attack = None, 1.01, 0, 0
-    log(f"default close knob: strictest certifiable cap = {cap} per 1,000")
+    log(f"default close knob: strictest cap the calibration part supports = {cap} per 1,000")
     curve = []
-    for t in sorted({0.5, 0.8, 0.9, 0.95, 0.98, 0.99, 0.995, 0.998}):
-        c = oof_scores >= t
-        nn, kk = int(c.sum()), int((th[c] == 0).sum())
+    for t in (0.5, 0.8, 0.9, 0.95, 0.98, 0.99, 0.995, 0.998):
+        c = cal_scores >= t
+        nn, kk = int(c.sum()), int((tc[c] == 0).sum())
         curve.append({"threshold": t, "closed": nn, "attacks_closed": kk,
-                      "share_closed": round(nn / len(th), 4),
-                      "wilson_upper_per_1000": round(1000 * wilson_upper(kk, nn), 2)})
+                      "share_closed": round(nn / len(tc), 4),
+                      "upper_95_per_1000": round(1000 * clopper_pearson_upper(kk, nn), 2)})
     info = {
         "trained_on": "training split only: out-of-fold FlowSentry (3 connection-grouped folds) "
                       "and the flows those folds would send to an analyst at 0.99",
@@ -382,20 +437,29 @@ def build_gate(X, y, groups, tr, classes, med, scale):
         "training_queue_benign_share": round(float(th.mean()), 4),
         "inputs": "132 flow features (signed log, robust scaled) + FlowSentry's 8 out-of-fold "
                   "class probabilities + 8 precedent statistics: " + ", ".join(GATE_FEATURES),
-        "model": "5 HistGradientBoosting models, one per connection-grouped fold; the score is "
-                 "their mean; the threshold is picked on their out-of-fold scores",
-        "out_of_fold_auc": round(auc, 4),
+        "model": "5 HistGradientBoosting models fitted on the fit part (connection-grouped folds); "
+                 "the deployed score is their mean",
+        "split": f"training queue split by connection: fit {len(fit_i)}, calibration {len(cal_i)}",
+        "bound_method": ("Learn-then-Test fixed-sequence testing on the calibration part: thresholds are "
+                         "tested from strictest to loosest, starting where enough flows close to reject at "
+                         "all; each test is an exact binomial test of 'attacks per closed flow >= cap' at "
+                         f"alpha {GATE_ALPHA}; the sequence stops at the first failure. Valid under the "
+                         "search, assuming calibration flows are exchangeable with queued test flows "
+                         "(they come from out-of-fold models on a smaller training pool)"),
+        "out_of_fold_auc": round(auc_fit, 4),
+        "calibration_auc": round(auc_cal, 4),
+        "n_calibration": int(len(tc)),
+        "n_calibration_attacks": n_att,
         "knob": knob,
-        "default_rule": "the strictest cap in the knob that the training data can certify",
+        "default_rule": "the strictest cap in the knob that the calibration part supports",
         "cap_per_1000": cap,
         "threshold": tau,
         "training_closed": n_closed,
         "training_attacks_closed": k_attack,
-        "training_wilson_upper_per_1000": round(1000 * wilson_upper(k_attack, n_closed), 2),
         "training_curve": curve,
     }
     oof_stats = {"conf": oof_conf, "y": ytr}
-    return FoldEnsemble(models), tau, info, oof_stats
+    return gate, tau, info, oof_stats
 
 
 # ----------------------------------------------------------------- main

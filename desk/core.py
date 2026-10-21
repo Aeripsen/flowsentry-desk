@@ -138,8 +138,8 @@ def fs_attack_family(b: Bundle, pos: np.ndarray) -> np.ndarray:
 
 def decide(b: Bundle, pos: np.ndarray, labels: Labels | None = None,
            cap: float | None = None) -> dict[str, np.ndarray]:
-    """cap: the close knob (attacks wrongly closed per 1,000, certified on training data);
-    None means the default, the strictest cap training data can certify."""
+    """cap: the close knob (attacks wrongly closed per 1,000, bounded on training data);
+    None means the default, the strictest cap the training data supports."""
     labels = labels or Labels()
     pos = np.asarray(pos, dtype=np.int64)
     n = len(pos)
