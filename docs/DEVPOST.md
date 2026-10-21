@@ -43,8 +43,8 @@ FlowSentry Desk works FlowSentry's reject queue.
   nearby, no objection from the second opinion), and the citations check out. The agent never sees the gate. It can
   add human attention, never remove it.
 - **A close knob instead of a magic threshold.** Like FlowSentry's reject knob, the analyst picks a cap on attacks
-  wrongly closed per 1,000 closed. Each setting maps to a gate threshold chosen on training data by a statistical test
-  that stays valid at the 5% level even though many thresholds are searched.
+  wrongly closed per 1,000 closed. Each setting maps to a gate threshold chosen on a held-out pool of training data
+  by fixed-sequence binomial tests, and the analyst sees how each setting did on the held-out queue.
 - **Learns from the analyst, in the safe direction.** Approvals and overrides become labels. They train the second
   opinion and feed a rule that blocks closes near any flow the analyst marked as an attack. After each label the desk
   shows which nearby cases it would now handle differently.
@@ -55,45 +55,46 @@ FlowSentry Desk works FlowSentry's reject queue.
 
 - FlowSentry is imported unchanged at a pinned commit. The build retrains it with its own code and refuses to continue
   unless the result matches FlowSentry's published metrics exactly, then rebuilds the exact 2,315-flow queue.
-- The close gate is trained only on the training split: FlowSentry is retrained on three connection-grouped folds,
-  and the 6,945 training flows those folds would have queued are split by connection into a fit part and a
-  calibration part. Five gradient-boosting models fitted on the first score the second, and each knob threshold is
-  picked there by fixed-sequence exact binomial tests (Learn then Test). The test queue is used once, by an
-  oracle-analyst evaluation that answers with the dataset's labels.
+- The close gate is trained only on the training split. Its connections are divided before anything is trained into
+  a fit pool and a calibration pool. In the fit pool FlowSentry is retrained on three connection-grouped folds and the
+  flows those folds would have queued train five gradient-boosting models; the calibration pool is scored by that
+  exact ensemble, and each knob threshold is picked there by fixed-sequence exact binomial tests (Learn then Test).
+  The test queue is used by an oracle-analyst evaluation that answers with the dataset's labels.
 - The agent loop is Claude Sonnet 5.5 through the Anthropic API with strict tool schemas, an 8-step budget, prompt
   caching and Anthropic's server-side refusal fallback. A deterministic policy runs the same tools in a fixed order;
   it is what runs when no model key is set, and the yardstick in the evaluation. If a live model call fails, the case
   goes to a person. Recorded Claude runs replay with no API at all, and are re-checked against the current rules
   before they are shown.
 - FastAPI, SQLite, a plain HTML, CSS and JavaScript interface with no build step, Docker, deployed on a Hugging Face
-  Space. CI runs 58 tests, rebuilds the data on Linux and requires it to match, smoke-tests the container, and clicks
+  Space. CI runs 59 tests, rebuilds the data on Linux and requires it to match, smoke-tests the container, and clicks
   through the interface in headless Chromium at desktop and phone widths.
 
-## Results (measured once on the held-out queue)
+## Results (on the held-out queue)
 
-- At the default setting, the strictest the training data supports (20 attacks per 1,000 closed), the desk closes
-  **8.6% of the queue (199 flows) with one attack among them: 5.0 per 1,000**, and only **0.2% of the 491 queued
-  attacks** get closed. Everything else is escalated or sent to the analyst.
-- The queue is served least benign-looking first: an analyst finds **half of the queued attacks after 341 cases
+- At the default setting (30 attacks per 1,000 closed), the desk closes **5.4% of the queue (124 flows) and not one
+  of them is an attack**. Looser settings close more: 9.0% with 2 attacks (9.6 per 1,000) at 50, 20.4% with 27
+  attacks (57.2 per 1,000) at 100. **Every setting stayed under its cap on the held-out queue.**
+- The queue is served least benign-looking first: an analyst finds **half of the 491 queued attacks after 324 cases
   instead of 866** in FlowSentry's own order (about 1,161 at random).
-- Of 186 escalations, 166 are attacks and 156 name the right family.
-- We publish where it falls short too. At the loose knob settings (50 and 100 per 1,000) the test rate went over the
-  cap (56.8 and 102.1), so those settings are a guide, not a guarantee. Reaching 90% of the attacks takes 1,607 cases
-  in the desk's order against 1,570 in FlowSentry's. This sample caps benign traffic, so per-1,000 figures would be
-  lower on a real, more benign queue (we publish a reweighting, labelled as a projection). The rare families are flood
-  variants from one dataset, not real zero-days. Learning from labels is small here: rare-family naming goes from
-  8.9% to 10.7% with 200 labels.
+- Of 186 escalations, 166 are attacks and 156 name the right family, each with a ticket draft.
+- Where it falls short: the strict default saves only about 5 decisions in 100; reaching 90% of the attacks takes
+  1,612 cases in the desk's order against 1,570 in FlowSentry's; caps of 10 and 20 per 1,000 cannot be supported by
+  this data; and learning from labels is small here (rare-family naming goes from 8.9% to 10.7% with 200 labels).
+  This sample caps benign traffic, so per-1,000 figures would be lower on a real, more benign queue (we publish a
+  reweighting, labelled as a projection). The rare families are flood variants from one dataset, not real zero-days.
 
 ## Challenges we ran into
 
 - **The data said no.** The first plan was to promise 10 attacks wrongly closed per 1,000. The training data cannot
   support it: inside the queue the rare floods look like benign traffic, and a bound that tight needs about 300 clean
   closes in a row. Rather than relax one number until it passed, we turned it into a knob and report every setting.
-- **A reviewer broke our statistics, and was right.** An independent model review (Codex, read-only) found that our
-  first threshold search reused the same data for searching and bounding, so the advertised 95% did not hold. We
-  replaced it with a held-out calibration part and fixed-sequence testing, and re-ran the evaluation once. The same
-  review found nine smaller problems (quota reset, replay validation, an origin check that failed open, reopen
-  semantics); all are fixed and tested.
+- **A reviewer broke our statistics, twice, and was right both times.** An independent model review (Codex,
+  read-only) found that our first threshold search reused the same data for searching and bounding, so the advertised
+  95% did not hold. Our fix split off a calibration part, and the second pass found that its labels still reached the
+  gate through upstream features. The calibration pool is now separated before anything is trained, and the 5% level
+  is described as approximate because flows of one connection are correlated. The evaluation was re-run after each
+  fix, never tuned to the test numbers. The same reviews found smaller problems (a quota a reset could erase, replays
+  that skipped validation, an origin check that failed open, reopen semantics); all are fixed and tested.
 - **Reproducibility across machines.** CI caught that an early gate was not reproducible: precedent ties broke on
   floating-point noise and the boosted trees summed in thread order. The build now rounds before ranking, breaks ties
   by index and fits on one thread, and CI requires identical gate scores on Linux.

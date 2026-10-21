@@ -27,16 +27,16 @@
   "explanation_max_abs_error": 7.771561172376096e-16,
   "gate": {
     "trained_on": "training split only: out-of-fold FlowSentry (3 connection-grouped folds) and the flows those folds would send to an analyst at 0.99",
-    "n_training_queue": 6945,
-    "training_queue_benign_share": 0.7908,
+    "n_training_queue": 7128,
+    "training_queue_benign_share": 0.7758,
     "inputs": "132 flow features (signed log, robust scaled) + FlowSentry's 8 out-of-fold class probabilities + 8 precedent statistics: fs_p_benign, fs_confidence, fs_escalated, knn_benign_share, knn_benign_share_weighted, log_d_nearest_benign, log_d_nearest_attack, log_d_ratio",
     "model": "5 HistGradientBoosting models fitted on the fit part (connection-grouped folds); the deployed score is their mean",
-    "split": "training queue split by connection: fit 4129, calibration 2816",
-    "bound_method": "Learn-then-Test fixed-sequence testing on the calibration part: thresholds are tested from strictest to loosest, starting where enough flows close to reject at all; each test is an exact binomial test of 'attacks per closed flow >= cap' at alpha 0.05; the sequence stops at the first failure. Valid under the search, assuming calibration flows are exchangeable with queued test flows (they come from out-of-fold models on a smaller training pool)",
-    "out_of_fold_auc": 0.7991,
-    "calibration_auc": 0.8498,
-    "n_calibration": 2816,
-    "n_calibration_attacks": 546,
+    "split": "training split divided by connection BEFORE any supervised step: fit pool 11305 flows (4257 queued), calibration pool 7740 flows (2871 queued)",
+    "bound_method": "fixed-sequence testing on the calibration pool (Learn then Test): thresholds are tested from strictest to loosest, starting where enough flows close to reject at all; each test is an exact binomial test of 'attacks per closed flow >= cap' at alpha 0.05; the sequence stops at the first failure. APPROXIMATE: the test treats flows as independent, but flows of one connection are correlated, and calibration flows are scored by a FlowSentry trained on a smaller pool than the one that scores test flows",
+    "out_of_fold_auc": 0.8522,
+    "calibration_auc": 0.7989,
+    "n_calibration": 2871,
+    "n_calibration_attacks": 696,
     "knob": [
       {
         "cap_per_1000": 10.0,
@@ -45,110 +45,104 @@
       },
       {
         "cap_per_1000": 20.0,
-        "met_on_training": true,
-        "threshold": 0.9968126684286593,
-        "training_closed": 293,
-        "training_attacks_closed": 1,
-        "training_share_closed": 0.104,
-        "training_share_of_attacks_closed": 0.0018,
-        "p_value": 0.0188,
-        "upper_95_per_1000": 16.09
+        "met_on_training": false,
+        "threshold": null
       },
       {
         "cap_per_1000": 30.0,
         "met_on_training": true,
-        "threshold": 0.9825773063206984,
-        "training_closed": 652,
-        "training_attacks_closed": 12,
-        "training_share_closed": 0.2315,
-        "training_share_of_attacks_closed": 0.022,
-        "p_value": 0.0451,
-        "upper_95_per_1000": 29.65
+        "threshold": 0.9991746678553091,
+        "training_closed": 122,
+        "training_attacks_closed": 0,
+        "training_share_closed": 0.0425,
+        "training_share_of_attacks_closed": 0.0,
+        "p_value": 0.0243,
+        "upper_95_per_1000": 24.26
       },
       {
         "cap_per_1000": 50.0,
         "met_on_training": true,
-        "threshold": 0.9480304974934424,
-        "training_closed": 903,
-        "training_attacks_closed": 34,
-        "training_share_closed": 0.3207,
-        "training_share_of_attacks_closed": 0.0623,
-        "p_value": 0.0475,
-        "upper_95_per_1000": 49.81
+        "threshold": 0.9982017161707318,
+        "training_closed": 232,
+        "training_attacks_closed": 5,
+        "training_share_closed": 0.0808,
+        "training_share_of_attacks_closed": 0.0072,
+        "p_value": 0.0235,
+        "upper_95_per_1000": 44.78
       },
       {
         "cap_per_1000": 100.0,
         "met_on_training": true,
-        "threshold": 0.7358671875295808,
-        "training_closed": 2240,
-        "training_attacks_closed": 200,
-        "training_share_closed": 0.7955,
-        "training_share_of_attacks_closed": 0.3663,
-        "p_value": 0.0472,
-        "upper_95_per_1000": 99.82
+        "threshold": 0.9828944620109652,
+        "training_closed": 632,
+        "training_attacks_closed": 50,
+        "training_share_closed": 0.2201,
+        "training_share_of_attacks_closed": 0.0718,
+        "p_value": 0.0427,
+        "upper_95_per_1000": 99.07
       }
     ],
     "default_rule": "the strictest cap in the knob that the calibration part supports",
-    "cap_per_1000": 20.0,
-    "threshold": 0.9968126684286593,
-    "training_closed": 293,
-    "training_attacks_closed": 1,
+    "cap_per_1000": 30.0,
+    "threshold": 0.9991746678553091,
+    "training_closed": 122,
+    "training_attacks_closed": 0,
     "training_curve": [
       {
         "threshold": 0.5,
-        "closed": 2434,
-        "attacks_closed": 262,
-        "share_closed": 0.8643,
-        "upper_95_per_1000": 118.53
+        "closed": 2497,
+        "attacks_closed": 397,
+        "share_closed": 0.8697,
+        "upper_95_per_1000": 171.52
       },
       {
         "threshold": 0.8,
-        "closed": 2162,
-        "attacks_closed": 182,
-        "share_closed": 0.7678,
-        "upper_95_per_1000": 94.66
+        "closed": 2268,
+        "attacks_closed": 310,
+        "share_closed": 0.79,
+        "upper_95_per_1000": 149.12
       },
       {
         "threshold": 0.9,
-        "closed": 1699,
-        "attacks_closed": 115,
-        "share_closed": 0.6033,
-        "upper_95_per_1000": 78.57
+        "closed": 2059,
+        "attacks_closed": 230,
+        "share_closed": 0.7172,
+        "upper_95_per_1000": 123.78
       },
       {
         "threshold": 0.95,
-        "closed": 890,
-        "attacks_closed": 32,
-        "share_closed": 0.3161,
-        "upper_95_per_1000": 48.0
+        "closed": 967,
+        "attacks_closed": 110,
+        "share_closed": 0.3368,
+        "upper_95_per_1000": 131.95
       },
       {
         "threshold": 0.98,
-        "closed": 687,
-        "attacks_closed": 16,
-        "share_closed": 0.244,
-        "upper_95_per_1000": 35.16
+        "closed": 684,
+        "attacks_closed": 55,
+        "share_closed": 0.2382,
+        "upper_95_per_1000": 99.63
       },
       {
         "threshold": 0.99,
-        "closed": 523,
-        "attacks_closed": 6,
-        "share_closed": 0.1857,
-        "upper_95_per_1000": 22.52
+        "closed": 504,
+        "attacks_closed": 30,
+        "share_closed": 0.1755,
+        "upper_95_per_1000": 79.87
       },
       {
         "threshold": 0.995,
-        "closed": 370,
-        "attacks_closed": 4,
-        "share_closed": 0.1314,
-        "upper_95_per_1000": 24.57
+        "closed": 367,
+        "attacks_closed": 13,
+        "share_closed": 0.1278,
+        "upper_95_per_1000": 55.73
       },
       {
         "threshold": 0.998,
-        "closed": 204,
-        "attacks_closed": 0,
-        "share_closed": 0.0724,
-        "upper_95_per_1000": 14.58
+        "closed": 237,
+        "attacks_closed": 6,
+        "share_closed": 0.0825,
+        "upper_95_per_1000": 49.35
       }
     ]
   },
@@ -157,7 +151,7 @@
       "family": "UDP-GAME",
       "training_flows": 155,
       "share_of_training": 0.0081,
-      "share_flowsentry_unsure_out_of_fold": 0.8903,
+      "share_flowsentry_unsure_out_of_fold": 0.9613,
       "typical": {
         "pkt_count": {
           "label": "packets in the flow",
@@ -373,7 +367,7 @@
       "family": "UDP-OVH",
       "training_flows": 249,
       "share_of_training": 0.0131,
-      "share_flowsentry_unsure_out_of_fold": 0.8434,
+      "share_flowsentry_unsure_out_of_fold": 0.9237,
       "typical": {
         "pkt_count": {
           "label": "packets in the flow",
@@ -445,7 +439,7 @@
       "family": "UDP-RAW",
       "training_flows": 8924,
       "share_of_training": 0.4686,
-      "share_flowsentry_unsure_out_of_fold": 0.0505,
+      "share_flowsentry_unsure_out_of_fold": 0.0605,
       "typical": {
         "pkt_count": {
           "label": "packets in the flow",
@@ -517,7 +511,7 @@
       "family": "UDP-VSE",
       "training_flows": 283,
       "share_of_training": 0.0149,
-      "share_flowsentry_unsure_out_of_fold": 0.6219,
+      "share_flowsentry_unsure_out_of_fold": 0.7067,
       "typical": {
         "pkt_count": {
           "label": "packets in the flow",
@@ -589,7 +583,7 @@
       "family": "UDP-bypass-v1",
       "training_flows": 156,
       "share_of_training": 0.0082,
-      "share_flowsentry_unsure_out_of_fold": 0.9038,
+      "share_flowsentry_unsure_out_of_fold": 0.9103,
       "typical": {
         "pkt_count": {
           "label": "packets in the flow",
@@ -661,7 +655,7 @@
       "family": "benign",
       "training_flows": 8912,
       "share_of_training": 0.4679,
-      "share_flowsentry_unsure_out_of_fold": 0.6162,
+      "share_flowsentry_unsure_out_of_fold": 0.6205,
       "typical": {
         "pkt_count": {
           "label": "packets in the flow",
@@ -736,7 +730,7 @@
     "n_stored": 6924,
     "k": 15
   },
-  "bundle_sha256": "407d2b916ca5d39607ebf599205d1451ac35550f6166e4af5c30e3b9ba3b1c99",
+  "bundle_sha256": "f31745e671dcbf202363c4ea253005b8cd696ab7c2545707ac9ad4456856c95b",
   "versions": {
     "python": "3.13.13",
     "numpy": "2.4.6",

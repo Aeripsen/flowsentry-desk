@@ -163,6 +163,10 @@ class DB:
         so a workspace reset cannot hand back quota."""
         day = time.strftime("%Y-%m-%d")
         with self.tx() as c:
+            # take the write lock before counting, so two server processes cannot both see
+            # the last free slot
+            if not c.in_transaction:
+                c.execute("BEGIN IMMEDIATE")
             mine = c.execute("SELECT COUNT(*) n FROM usage WHERE day=? AND workspace=?",
                              (day, ws)).fetchone()["n"]
             total = c.execute("SELECT COUNT(*) n FROM usage WHERE day=?", (day,)).fetchone()["n"]

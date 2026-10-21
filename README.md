@@ -33,8 +33,8 @@ be far more benign, which makes the analyst's day worse, not better.
    labelled as an attack sits in its neighbourhood, and the second opinion does not object. The agent cannot see the
    gate. It can add human attention, never remove it.
 4. **Has a close knob.** Like FlowSentry's reject knob, the analyst picks a cap on attacks wrongly closed per 1,000
-   closed. Each cap maps to a gate threshold chosen on training data by a test that holds at the 5% level even though
-   many thresholds are searched. The default is the strictest cap the training data supports.
+   closed. Each cap maps to a gate threshold chosen on a held-out pool of the training data by fixed-sequence binomial
+   tests at the 5% level (approximate, see below). The default is the strictest cap the training data supports.
 5. **Learns from the analyst, in the safe direction.** Labels train the second opinion and feed the nearby-attack
    rule, so an override can only make the desk more careful near that flow. After each label the desk reports which
    nearby cases it would now handle differently.
@@ -48,41 +48,40 @@ Measured once on the 2,315-flow queue, with an oracle analyst that answers with 
 in [reports/eval.json](reports/eval.json) and is rebuilt by `make eval`. The engine is the deterministic policy; a
 model-driven run can only close a subset of what the policy closes, because a close needs the same server rules.
 
-**The close knob.** Each cap's threshold was chosen on a calibration part of the training split; the test queue was
+**The close knob.** Each cap's threshold was chosen on a calibration pool of the training split; the test queue was
 scored once at every setting.
 
 | Cap | Supported on training data | Queue closed | Attacks closed | Per 1,000 closed (95% CI) | Queued attacks closed | Decisions per 100 |
 |---|---|---|---|---|---|---|
 | 10 per 1,000 | no | 0% | 0 | n/a | 0% | 100 |
-| **20 per 1,000 (default)** | yes | **8.6% (199)** | **1** | **5.0 (0.9 to 27.9)** | **0.2%** | **91.4** |
-| 30 per 1,000 | yes | 19.7% (456) | 13 | 28.5 (16.7 to 48.2) | 2.6% | 80.3 |
-| 50 per 1,000 | yes | 28.1% (651) | 37 | 56.8 (41.5 to 77.4) | 7.5% | 71.9 |
-| 100 per 1,000 | yes | 77.5% (1,793) | 183 | 102.1 (88.9 to 116.9) | 37.3% | 22.5 |
+| 20 per 1,000 | no | 0% | 0 | n/a | 0% | 100 |
+| **30 per 1,000 (default)** | yes | **5.4% (124)** | **0** | **0 (0 to 30.0)** | **0%** | **94.6** |
+| 50 per 1,000 | yes | 9.0% (209) | 2 | 9.6 (2.6 to 34.2) | 0.4% | 91.0 |
+| 100 per 1,000 | yes | 20.4% (472) | 27 | 57.2 (39.6 to 81.9) | 5.5% | 79.6 |
 
-At the default the desk closes 199 flows and one of them is an attack (a UDP-bypass-v1 flow). At 30 per 1,000 the
-test rate stays under the cap. At 50 and 100 it does not: 56.8 and 102.1 per 1,000. Those two settings are where the
-calibration assumption (calibration flows behave like queued test flows) visibly fails, so the loose end of the knob
-should be read as a guide, not a guarantee. At every setting, 8.0 of the decisions per 100 items are one-key
-confirmations of an escalation rather than full investigations.
+At the default the desk closes 124 queue flows and none is an attack. At every supported setting the test rate stayed
+under its cap. At every setting, 8.0 of the decisions per 100 items are one-key confirmations of an escalation rather
+than full investigations. The default is strict on purpose: it saves the analyst about 5 decisions in 100, and the
+larger saving comes from the order and the pre-read below.
 
 **Finding attacks sooner.** The queue is served in the desk's order by default: least benign-looking first. In that
-order an analyst finds half of the 491 queued attacks after 341 items, against 866 in FlowSentry's own order (lowest
-P(benign) first) and about 1,161 at random. The advantage is at the top of the queue: finding 90% takes 1,607 items,
+order an analyst finds half of the 491 queued attacks after 324 items, against 866 in FlowSentry's own order (lowest
+P(benign) first) and about 1,161 at random. The advantage is at the top of the queue: finding 90% takes 1,612 items,
 slightly more than FlowSentry's 1,570.
 
 **Escalations.** The desk escalates 186 queue flows: 166 are attacks (89%), and 156 carry the right family name (84%).
 
 **Learning from labels is small on this sample.** With 0, 10, 25, 50, 100 and 200 oracle labels (20 random label
 orders each), the share of rare-family flows the desk escalates under the right name goes 8.9%, 9.4%, 10.0%, 10.1%,
-10.1%, 10.7%. Attacks wrongly closed at the default go from 1 to between 0.75 and 0.9 on average, because a labelled
-attack blocks closes in its neighbourhood. The video shows one case where that matters: at 30 per 1,000, relabelling
-C1099 (a UDP-OVH flood the desk closed) stops the desk from closing C1127, which is a UDP-HULK flood. That example was
-picked after the evaluation; it illustrates the mechanism and is not a measurement.
+10.1%, 10.7%. What labels do reliably is block closes near a labelled attack. The video shows one case where that
+matters: at 100 per 1,000, relabelling C1681 (a UDP-OVH flood the desk closed) stops the desk from closing C1986 and
+C1967, both UDP-OVH floods. That example was picked after the evaluation; it illustrates the mechanism and is not a
+measurement.
 
 **What the numbers do not say.**
-- Per-1,000-closed figures depend on how benign the queue is, and this sample caps benign traffic. Reweighting the
-  measured close rates at the default to a 95% benign queue gives about 1.0 attack per 1,000 closed; that is a
-  projection, not a measurement. The share of queued attacks closed (0.2% at the default) does not depend on the mix.
+- Per-1,000-closed figures depend on how benign the queue is, and this sample caps benign traffic. A reweighting of
+  the measured close rates to more benign queues is in `reports/eval.json` and on the Results page, labelled as a
+  projection. The share of queued attacks closed does not depend on the mix.
 - The rare families are flood variants from one dataset's generator, not real-world zero-days.
 - One flood is many flows. The evaluation counts flows, not incidents.
 - The headline uses the deterministic policy. Recorded Claude runs, once recorded, are evaluated separately in
@@ -90,26 +89,32 @@ picked after the evaluation; it illustrates the mechanism and is not a measureme
 
 ## How the gate was chosen, including what did not work
 
-The gate is trained on the training split only. FlowSentry is retrained on three connection-grouped folds, and the
-6,945 training flows those folds would have queued become the gate's data. They are split by connection into a fit
-part (4,129 flows) and a calibration part (2,816 flows, 546 of them attacks). Five gradient-boosting models are fitted
-on the fit part; the deployed score is their mean. Inputs: the 132 flow features, FlowSentry's out-of-fold class
-probabilities and eight precedent statistics. On the calibration part the deployed ensemble has an AUC of 0.85.
+Everything about the gate comes from the training split. Its connections are divided first, before any model is
+trained, into a fit pool (11,305 flows) and a calibration pool (7,740 flows). In the fit pool, FlowSentry is retrained
+on three connection-grouped folds; the 4,257 fit flows those folds would have queued train five gradient-boosting
+models, and the deployed gate score is their mean. Inputs: the 132 flow features, FlowSentry's out-of-fold class
+probabilities and eight precedent statistics. The calibration pool is scored by a FlowSentry trained on the whole fit
+pool, with precedents from the fit pool only, so none of its labels touch anything that scores it. Its 2,871 queued
+flows (696 of them attacks) are read once, to pick the thresholds. On them the gate's AUC is 0.80.
 
-Each knob threshold is picked on the calibration part by fixed-sequence testing (the Learn-then-Test procedure):
+Each knob threshold is picked on the calibration pool by fixed-sequence testing (the Learn-then-Test procedure):
 thresholds are tested from strictest to loosest with an exact binomial test of "attacks among closed flows are at
-least the cap" at the 5% level, and the sequence stops at the first threshold that fails. That keeps the 5% level valid
-even though many thresholds are searched. The cap of 10 per 1,000 is not supported: it would need about 300 closes in
-a row with no attack.
+least the cap" at the 5% level, and the sequence stops at the first threshold that fails. Read the 5% as approximate:
+the test treats flows as independent, but flows of one connection are correlated, and calibration flows are scored by
+a FlowSentry trained on a smaller pool than the one that scores test flows. The caps of 10 and 20 per 1,000 are not
+supported: they would need roughly 300 and 150 closes in a row with no attack.
 
-Three earlier versions did not survive review, and the log keeps their numbers, marked superseded:
+The evaluation was run three times. Each run followed a methodology fix found by review, and none was tuned to the test
+numbers; the build log keeps every superseded number with its date.
 - The first gate picked the loosest threshold whose Wilson bound passed, searched on the same out-of-fold scores, and
-  scored calibration rows with single fold models while deploying their average. An independent review (Codex)
-  pointed out that this search breaks the 95% bound; the calibration split above replaced it.
-- That first gate was also not reproducible across machines: precedent ties broke on floating-point noise and the
-  boosted trees summed in thread order. The build now rounds distances before ranking, breaks ties by index and fits
-  on one thread; CI rebuilds the bundle on Linux and requires identical gate scores.
-- The first plan was a single cap of 10 per 1,000. The data cannot support it, so the single cap became the knob.
+  scored calibration rows with single fold models while deploying their average. An independent review (Codex,
+  read-only) showed that this search breaks the 95% bound.
+- The second split the gated rows into fit and calibration parts, but only after the out-of-fold FlowSentry features
+  and precedent pools had been built from all training labels. A second review pass caught that the calibration
+  labels still reached the gate that way. The pools are now split before anything is trained.
+- Separately, CI caught that an early gate was not reproducible across machines (precedent ties broke on
+  floating-point noise; the boosted trees summed in thread order). The build now rounds distances before ranking,
+  breaks ties by index and fits on one thread, and CI rebuilds the bundle on Linux and requires identical gate scores.
 
 ## Run it
 
@@ -128,7 +133,7 @@ requests opt into Anthropic's server-side refusal fallback, and any API failure 
 | Command | What it does |
 |---|---|
 | `make serve` | the desk on port 8000 |
-| `make test` | 58 tests: guardrails, the agent loop against a scripted client, the API, Clerk token checks, the bundle |
+| `make test` | 59 tests: guardrails, the agent loop against a scripted client, the API, Clerk token checks, the bundle |
 | `make data` | rebuild `data/desk_bundle.npz` from FlowSentry (needs `requirements-build.txt`, about a minute) |
 | `make verify-data` | rebuild and compare with the committed bundle (CI runs this on Linux) |
 | `make eval` | the oracle-analyst evaluation |

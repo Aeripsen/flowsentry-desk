@@ -247,7 +247,7 @@
       <h2>What the desk does to the queue</h2>
       <p class="lede">Measured once on FlowSentry's 2,315-flow reject queue from the held-out split, with an oracle analyst who answers with the dataset's label. Every number below is in <code>reports/eval.json</code>.</p>
       <div class="figs">
-        <div class="fig"><div class="n">${pct(def.share_of_queue_closed)}</div><div class="l">of the queue closed at the default setting (${def.cap_per_1000_on_training} per 1,000): ${def.auto_closed} flows, ${def.attacks_wrongly_closed} of them ${def.attacks_wrongly_closed === 1 ? "an attack" : "attacks"}</div></div>
+        <div class="fig"><div class="n">${pct(def.share_of_queue_closed)}</div><div class="l">of the queue closed at the default setting (${def.cap_per_1000_on_training} per 1,000): ${def.auto_closed} flows, ${def.attacks_wrongly_closed === 0 ? "none of them an attack" : def.attacks_wrongly_closed === 1 ? "one of them an attack" : def.attacks_wrongly_closed + " of them attacks"}</div></div>
         <div class="fig"><div class="n">${pct(def.share_of_queued_attacks_closed)}</div><div class="l">of the ${def.queued_attacks} queued attacks closed at the default; the rest are escalated or sent to you</div></div>
         <div class="fig"><div class="n">${o.desk_order.items_to_find_50pct_of_attacks}</div><div class="l">items worked to find half the attacks in the desk's order, against ${o.flowsentry_order.items_to_find_50pct_of_attacks} in FlowSentry's</div></div>
         <div class="fig"><div class="n">${def.escalated_true_attack} of ${def.escalated}</div><div class="l">escalations are attacks; ${def.escalated_family_correct} name the right family</div></div>

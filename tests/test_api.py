@@ -144,3 +144,12 @@ def test_queue_is_served_in_the_desks_order(client, b):
     gate = b.a["q_gate_score"]
     scores = [float(gate[b.pos(r["case_id"])]) for r in rows]
     assert scores == sorted(scores)
+
+
+def test_quota_holds_across_connections(tmp_path):
+    from desk.db import DB
+
+    path = tmp_path / "q.sqlite3"
+    one, two = DB(path), DB(path)
+    assert one.reserve_model_run("w", "anthropic", 1, 100)
+    assert not two.reserve_model_run("w", "anthropic", 1, 100)

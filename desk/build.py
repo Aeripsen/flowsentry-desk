@@ -322,7 +322,8 @@ def build_gate(X, y, groups, tr, classes, med, scale):
     from flowsentry.registry import make_stage_estimator
     from sklearn.impute import SimpleImputer
     from sklearn.metrics import roc_auc_score
-    from sklearn.model_selection import GroupKFold
+    from sklearn.model_selection import GroupKFold, GroupShuffleSplit
+    from threadpoolctl import threadpool_limits
 
     from .features import to_space
 
@@ -330,60 +331,64 @@ def build_gate(X, y, groups, tr, classes, med, scale):
     gtr = groups[tr]
     ytr = y[tr]
     n = len(tr)
-    cache = S.BUILD_DIR / "gate_oof_v3.npz"  # FlowSentry folds only
+    b_idx = classes.index("benign")
+
+    # Calibration connections are reserved FIRST, before any supervised step. Their labels
+    # are read once, by the threshold test at the end; nothing that scores them saw them.
+    fit_r, cal_r = next(GroupShuffleSplit(n_splits=1, test_size=GATE_CAL_SHARE,
+                                          random_state=0).split(np.zeros(n), groups=gtr))
+
+    def flowsentry_features(A: np.ndarray, B: np.ndarray):
+        """FlowSentry trained on training rows A, scoring rows B; B's precedents come from A."""
+        imp = SimpleImputer(strategy="median").fit(X[tr[A]])
+        Xa, Xb = imp.transform(X[tr[A]]), imp.transform(X[tr[B]])
+        m = TwoStageRejectClassifier(
+            stage1_features=STAGE1_INDICES,
+            escalate_threshold=cfg.escalate_threshold,
+            stage1_estimator=make_stage_estimator(cfg.stage_estimator, **cfg.stage1_params),
+            stage2_estimator=make_stage_estimator(cfg.stage_estimator, **cfg.stage2_params),
+        ).fit(Xa, ytr[A])
+        assert list(m.classes_) == classes
+        _, conf, esc, proba = m._stage_predict(Xb, sequential=True)
+        del m
+        Za, Zb = to_space(Xa, med, scale), to_space(Xb, med, scale)
+        nb_i, nb_d = knn(Zb, Za, S.K_NEIGHBOURS)
+        ya = ytr[A]
+        benign_a = ya == "benign"
+        _, db = knn(Zb, Za[benign_a], 1)
+        _, dt = knn(Zb, Za[~benign_a], 1)
+        f = gate_features(proba[:, b_idx], conf, esc, (ya[nb_i] == "benign").astype(float), nb_d,
+                          db[:, 0], dt[:, 0])
+        return conf, proba, f
+
+    cache = S.BUILD_DIR / "gate_oof_v4.npz"
     if cache.exists():
         z = np.load(cache)
         oof_conf, oof_proba, feats = z["conf"], z["proba"], z["feats"]
-        log(f"gate: reusing cached out-of-fold FlowSentry from build/{cache.name}")
+        log(f"gate: reusing cached FlowSentry features from build/{cache.name}")
     else:
         oof_conf = np.zeros(n)
         oof_proba = np.zeros((n, len(classes)))
-        oof_esc = np.zeros(n, dtype=bool)
         feats = np.zeros((n, len(GATE_FEATURES)))
-        b_idx = classes.index("benign")
-        for f, (a, b) in enumerate(GroupKFold(n_splits=3).split(tr, groups=gtr)):
-            log(f"gate fold {f + 1}/3: FlowSentry on {len(a)} training flows, scoring {len(b)}")
-            imp = SimpleImputer(strategy="median").fit(X[tr[a]])
-            Xa, Xb = imp.transform(X[tr[a]]), imp.transform(X[tr[b]])
-            m = TwoStageRejectClassifier(
-                stage1_features=STAGE1_INDICES,
-                escalate_threshold=cfg.escalate_threshold,
-                stage1_estimator=make_stage_estimator(cfg.stage_estimator, **cfg.stage1_params),
-                stage2_estimator=make_stage_estimator(cfg.stage_estimator, **cfg.stage2_params),
-            ).fit(Xa, ytr[a])
-            assert list(m.classes_) == classes
-            _, conf, esc, proba = m._stage_predict(Xb, sequential=True)
-            oof_conf[b], oof_esc[b], oof_proba[b] = conf, esc, proba
-            del m
-            # precedents for these flows come from the other folds only, the way test
-            # flows only ever see training connections
-            Za, Zb = to_space(Xa, med, scale), to_space(Xb, med, scale)
-            nb_i, nb_d = knn(Zb, Za, S.K_NEIGHBOURS)
-            ya = ytr[a]
-            benign_a = ya == "benign"
-            _, db = knn(Zb, Za[benign_a], 1)
-            _, dt = knn(Zb, Za[~benign_a], 1)
-            feats[b] = gate_features(proba[:, b_idx], conf, esc,
-                                     (ya[nb_i] == "benign").astype(float), nb_d,
-                                     db[:, 0], dt[:, 0])
-        np.savez(cache, conf=oof_conf, proba=oof_proba, esc=oof_esc, feats=feats)
+        # fit pool: out of fold, three connection-grouped folds inside the fit pool only
+        for f_i, (a, b) in enumerate(GroupKFold(n_splits=3).split(fit_r, groups=gtr[fit_r])):
+            A, B = fit_r[a], fit_r[b]
+            log(f"gate fold {f_i + 1}/3 (fit pool): FlowSentry on {len(A)} flows, scoring {len(B)}")
+            oof_conf[B], oof_proba[B], feats[B] = flowsentry_features(A, B)
+        # calibration pool: FlowSentry trained on the whole fit pool, never on these rows
+        log(f"gate calibration pool: FlowSentry on {len(fit_r)} fit flows, scoring {len(cal_r)}")
+        oof_conf[cal_r], oof_proba[cal_r], feats[cal_r] = flowsentry_features(fit_r, cal_r)
+        np.savez(cache, conf=oof_conf, proba=oof_proba, feats=feats)
 
     Xtr_imp = SimpleImputer(strategy="median").fit(X[tr]).transform(X[tr])
-    Ztr = to_space(Xtr_imp, med, scale)
-    hard = oof_conf < S.REJECT_THRESHOLD
+    Ztr = to_space(Xtr_imp, med, scale)   # unsupervised: medians and quantiles, no labels
     target = (ytr == "benign").astype(int)
-    log(f"gate training rows (training flows the out-of-fold model would queue): "
-        f"{int(hard.sum())}, benign share {target[hard].mean():.3f}")
-    M = gate_matrix(Ztr[hard], feats[hard], oof_proba[hard])
-    th, gh = target[hard], gtr[hard]
-    from sklearn.model_selection import GroupShuffleSplit
-    from threadpoolctl import threadpool_limits
-
-    # fit part and calibration part, split by connection; the calibration part is never
-    # seen by the gate models and is scored by the exact ensemble that is deployed
-    fit_i, cal_i = next(GroupShuffleSplit(n_splits=1, test_size=GATE_CAL_SHARE,
-                                          random_state=0).split(M, groups=gh))
-    Mf, tf, gf = M[fit_i], th[fit_i], gh[fit_i]
+    hard = oof_conf < S.REJECT_THRESHOLD
+    fit_h = fit_r[hard[fit_r]]
+    cal_h = cal_r[hard[cal_r]]
+    log(f"gate rows the out-of-fold FlowSentry would queue: fit {len(fit_h)}, calibration {len(cal_h)}")
+    Mf, tf, gf = gate_matrix(Ztr[fit_h], feats[fit_h], oof_proba[fit_h]), target[fit_h], gtr[fit_h]
+    Mc, tc = gate_matrix(Ztr[cal_h], feats[cal_h], oof_proba[cal_h]), target[cal_h]
     oof_fit = np.zeros(len(tf))
     models = []
     # one thread: histogram sums in a fixed order, so the gate is the same on every machine
@@ -393,12 +398,11 @@ def build_gate(X, y, groups, tr, classes, med, scale):
             oof_fit[b] = mdl.predict_proba(Mf[b])[:, 1]
             models.append(mdl)
     gate = FoldEnsemble(models)
-    cal_scores = gate.score(M[cal_i])
-    tc = th[cal_i]
+    cal_scores = gate.score(Mc)
     auc_fit = float(roc_auc_score(tf, oof_fit))
     auc_cal = float(roc_auc_score(tc, cal_scores))
-    log(f"gate: fit part {len(fit_i)} flows (out-of-fold AUC {auc_fit:.4f}), calibration part "
-        f"{len(cal_i)} flows, {int((tc == 0).sum())} attacks (AUC of the deployed ensemble {auc_cal:.4f})")
+    log(f"gate: fit part {len(tf)} flows (out-of-fold AUC {auc_fit:.4f}), calibration part "
+        f"{len(tc)} flows, {int((tc == 0).sum())} attacks (AUC of the deployed ensemble {auc_cal:.4f})")
     n_att = int((tc == 0).sum())
     knob = []
     for cap in S.GATE_CAPS_PER_1000:
@@ -433,19 +437,21 @@ def build_gate(X, y, groups, tr, classes, med, scale):
     info = {
         "trained_on": "training split only: out-of-fold FlowSentry (3 connection-grouped folds) "
                       "and the flows those folds would send to an analyst at 0.99",
-        "n_training_queue": int(len(th)),
-        "training_queue_benign_share": round(float(th.mean()), 4),
+        "n_training_queue": int(len(tf) + len(tc)),
+        "training_queue_benign_share": round(float(np.concatenate([tf, tc]).mean()), 4),
         "inputs": "132 flow features (signed log, robust scaled) + FlowSentry's 8 out-of-fold "
                   "class probabilities + 8 precedent statistics: " + ", ".join(GATE_FEATURES),
         "model": "5 HistGradientBoosting models fitted on the fit part (connection-grouped folds); "
                  "the deployed score is their mean",
-        "split": f"training queue split by connection: fit {len(fit_i)}, calibration {len(cal_i)}",
-        "bound_method": ("Learn-then-Test fixed-sequence testing on the calibration part: thresholds are "
+        "split": (f"training split divided by connection BEFORE any supervised step: fit pool {len(fit_r)} "
+                  f"flows ({len(tf)} queued), calibration pool {len(cal_r)} flows ({len(tc)} queued)"),
+        "bound_method": ("fixed-sequence testing on the calibration pool (Learn then Test): thresholds are "
                          "tested from strictest to loosest, starting where enough flows close to reject at "
                          "all; each test is an exact binomial test of 'attacks per closed flow >= cap' at "
-                         f"alpha {GATE_ALPHA}; the sequence stops at the first failure. Valid under the "
-                         "search, assuming calibration flows are exchangeable with queued test flows "
-                         "(they come from out-of-fold models on a smaller training pool)"),
+                         f"alpha {GATE_ALPHA}; the sequence stops at the first failure. APPROXIMATE: the test "
+                         "treats flows as independent, but flows of one connection are correlated, and "
+                         "calibration flows are scored by a FlowSentry trained on a smaller pool than the "
+                         "one that scores test flows"),
         "out_of_fold_auc": round(auc_fit, 4),
         "calibration_auc": round(auc_cal, 4),
         "n_calibration": int(len(tc)),
