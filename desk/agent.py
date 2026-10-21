@@ -262,7 +262,7 @@ def _anthropic_loop(run: Run, ctx: tools.CaseContext, model: str, client=None) -
         # if a safety classifier declines (network-attack text can trip the cyber one),
         # the API retries on Anthropic's recommended fallback model instead of failing
         betas.append("server-side-fallback-2026-07-01")
-        extra["fallbacks"] = "default"
+        extra["fallbacks"] = "default"  # a native SDK parameter since anthropic 1.x
     nudged = False
     for _ in range(MAX_TOOL_STEPS + 2):
         kwargs: dict[str, Any] = dict(
@@ -271,7 +271,7 @@ def _anthropic_loop(run: Run, ctx: tools.CaseContext, model: str, client=None) -
             tools=schemas, messages=messages, output_config={"effort": "medium"},
         )
         if betas:
-            r = client.beta.messages.create(betas=betas, extra_body=extra, **kwargs)
+            r = client.beta.messages.create(betas=betas, **extra, **kwargs)
         else:
             r = client.messages.create(**kwargs)
         u = getattr(r, "usage", None)

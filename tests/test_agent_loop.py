@@ -66,7 +66,7 @@ def test_a_clean_run_settles_with_checked_citations(b):
     kw = fc.calls[0]
     assert all(t["strict"] for t in kw["tools"])
     assert kw["system"][0]["cache_control"]["type"] == "ephemeral"
-    assert kw["extra_body"] == {"fallbacks": "default"}
+    assert kw["fallbacks"] == "default"
     assert "server-side-fallback-2026-07-01" in kw["betas"]
     assert kw["model"] == "claude-sonnet-5-5"
 
