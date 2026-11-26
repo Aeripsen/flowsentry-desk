@@ -3,8 +3,9 @@
 **A triage agent for the network flows FlowSentry refuses to call. Six read-only tools, a memo where every claim cites
 evidence the server issued, and a close that needs three independent yeses.**
 
-**Live demo:** https://sepehrjafari81-flowsentry-desk.hf.space (no sign-in, no key needed; Space page:
-https://huggingface.co/spaces/sepehrjafari81/flowsentry-desk)
+**Live demo:** none right now. A public Hugging Face Space was deployed for the Build North 2026 judging
+window; on 2026-11-26 its address (sepehrjafari81-flowsentry-desk.hf.space) returns 404 and the last deploy run in
+CI failed. Run it locally in two commands instead, see [Run it](#run-it) (no sign-in, no key needed).
 
 Built for Build North 2026 (Georgian) on top of my open-source detector
 [FlowSentry](https://github.com/Aeripsen/flowsentry). What existed before Build Week and what is new is in
